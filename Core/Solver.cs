@@ -1,60 +1,68 @@
-﻿using System.Numerics;
-
-namespace OmegaSudoku.Core;
+﻿namespace OmegaSudoku.Core;
 
 public static class Solver
 {
     public static bool Solve(Board board)
     {
-        if (!UpdatePossibilities(board))
-            return false;
-        
-        var (found, row, col) = FindBestEmptyCell(board);
-        if (!found) return true; // Solved
-        
-        Cell cell = board.GetCell(row, col);
+        int size = board.Size;
 
-        ulong bits = cell.Possibilities;
-        while (bits != 0)
+        List<int>[] rowUsed = new List<int>[size];
+        List<int>[] colUsed = new List<int>[size];
+        List<int>[] boxUsed = new List<int>[size];
+
+        for (int i = 0; i < size; i++)
         {
-            int n = BitOperations.TrailingZeroCount(bits); // first 1 bit index
-            bits &= bits - 1; // remove all the first 0 bits
-            cell.Number = n + 1;
+            rowUsed[i] = new List<int>();
+            colUsed[i] = new List<int>();
+            boxUsed[i] = new List<int>();
+        }
+
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                Cell cell = board.GetCell(i, j);
+                if (cell.IsEmpty) continue;
+
+                rowUsed[i].Add(cell.Number);
+                colUsed[j].Add(cell.Number);
+                boxUsed[BoxIndex(i, j, board.BoxSize)].Add(cell.Number);
+            }
+        }
+
+        return SolveRecursive(board, rowUsed, colUsed, boxUsed);
+    }
+
+    private static bool SolveRecursive(Board board, List<int>[] rowUsed, List<int>[] colUsed, List<int>[] boxUsed)
+    {
+        var (possibilities, row, col) = FindBestEmptyCell(board, rowUsed, colUsed, boxUsed);
+        if (row == -1) return true; // solved because no empty cells left
+        if (possibilities.Count == 0) return false; // dead end because no possibilities
+
+        foreach (int num in possibilities)
+        {
+            int boxIndex = BoxIndex(row, col, board.BoxSize);
             
-            if (Solve(board)) 
+            board.GetCell(row, col).Number = num;
+            rowUsed[row].Add(num);
+            colUsed[col].Add(num);
+            boxUsed[boxIndex].Add(num);
+
+            if (SolveRecursive(board, rowUsed, colUsed, boxUsed))
                 return true;
-            cell.Number = 0;
+            
+            board.GetCell(row, col).Number = 0;
+            rowUsed[row].Remove(num);
+            colUsed[col].Remove(num);
+            boxUsed[boxIndex].Remove(num);
         }
 
         return false;
     }
 
-    private static bool UpdatePossibilities(Board board)
+    private static (List<int>, int, int) FindBestEmptyCell(Board board, List<int>[] rowUsed, List<int>[] colUsed, List<int>[] boxUsed)
     {
-        for (int i = 0; i < board.Size; i++)
-        {
-            for (int j = 0; j < board.Size; j++)
-            {
-                Cell cell = board.GetCell(i, j);
-                if (cell.IsSolved)
-                    continue;
-                
-                cell.ClearPossibilities();
-                for (int num = 1; num <= board.Size; num++)
-                    if (board.IsSafe(i, j, num))
-                        cell.AddPossibility(num);
-
-                if (cell.HasNoPossibilities() && !cell.IsSolved)
-                    return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static (bool, int, int) FindBestEmptyCell(Board board)
-    {
-        int minPossibilities = int.MaxValue;
+        List<int> minPossibilities = new List<int>();
         int foundRow = -1;
         int foundCol = -1;
 
@@ -66,16 +74,33 @@ public static class Solver
                 if (cell.IsSolved)
                     continue;
 
-                int count = cell.PossibilityCount;
-                if (count < minPossibilities)
+                List<int> possibilities = new List<int>();
+                for (int num = 1; num <= board.Size; num++)
                 {
-                    minPossibilities = count;
+                    if (!rowUsed[i].Contains(num) && 
+                            !colUsed[j].Contains(num) &&
+                            !boxUsed[BoxIndex(i, j, board.BoxSize)].Contains(num))
+                        possibilities.Add(num);
+                }
+
+                // 1 because there won't be fewer possibilities, 0 because its dead end
+                if (possibilities.Count == 1 || possibilities.Count == 0)
+                    return (possibilities, i, j);
+                
+                if (foundRow == -1 || possibilities.Count < minPossibilities.Count)
+                {
+                    minPossibilities = possibilities;
                     foundRow = i;
                     foundCol = j;
                 }
             }
         }
 
-        return (foundRow != -1, foundRow, foundCol);
+        return (minPossibilities, foundRow, foundCol);
+    }
+    
+    private static int BoxIndex(int row, int column, int boxSize)
+    {
+        return (row / boxSize) * boxSize + (column / boxSize);
     }
 }
