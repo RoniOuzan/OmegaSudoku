@@ -28,27 +28,23 @@ public class Board
 
     public bool IsSafe(int row, int column, int num)
     {
-        // Check column
-        for (int i = 0; i < this.Size; i++)
-        {
-            if (this.GetCell(i, column).Number == num)
-                return false;
-        }
-        
         // Check row
         for (int i = 0; i < this.Size; i++)
-        {
             if (this.GetCell(row, i).Number == num)
                 return false;
-        }
+            
+        // Check column
+        for (int i = 0; i < this.Size; i++)
+            if (this.GetCell(i, column).Number == num)
+                return false;
 
         // Check box
-        int startCol = row - (row % 3);
-        int startRow = column - (column % 3);
-        for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-            if (this.GetCell(i + startCol, j + startRow).Number == num)
-                return false;
+        int startRow = row - (row % this.BoxSize);
+        int startCol = column - (column % this.BoxSize);
+        for (int i = 0; i < this.BoxSize; i++)
+            for (int j = 0; j < this.BoxSize; j++)
+                if (this.GetCell(i + startRow, j + startCol).Number == num)
+                    return false;
 
         return true;
     }
@@ -56,18 +52,18 @@ public class Board
     public void Print()
     {
         for (int i = 0; i < this.Size; i++) {
-            if (i > 0 && i % 3 == 0)
+            if (i > 0 && i % this.BoxSize == 0)
             {
                 Console.WriteLine("---------+---------+---------");
             }
 
             for (int j = 0; j < this.Size; j++)
             {
-                if (j > 0 && j % 3 == 0)
+                if (j > 0 && j % this.BoxSize == 0)
                 {
                     Console.Write("|");
                 }
-                Console.Write(" " + this.GetCell(i, j) + " ");
+                Console.Write(" " + this.GetCell(i, j).Number + " ");
             }
             Console.WriteLine();
         }
@@ -80,7 +76,7 @@ public class Board
         {
             for (int j = 0; j < this.Size; j++)
             {
-                result += $"{this.GetCell(i, j)}";
+                result += $"{this.GetCell(i, j).Number}";
             }
         }
 

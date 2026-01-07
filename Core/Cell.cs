@@ -2,24 +2,27 @@
 
 public class Cell
 {
-    public int Number { get; set; }
-    private List<int> Possibilities { get; }
-    
+    private int _number;
+    private List<int> _possibilities;
+
+    public int Number
+    {
+        get => _number;
+        set => _number = value;
+    }
+
+    public List<int> Possibilities => _possibilities;
+
     public Cell(int number)
     {
-        this.Number = number;
-        this.Possibilities = new List<int>();
+        _number = number;
+        _possibilities = new List<int>();
     }
+    
+    public bool IsSolved => _number != 0;
+    public bool IsEmpty => _number == 0;
 
-    public void AddPossibility(int num)
-    {
-        this.Possibilities.Add(num);
-    }
+    public void AddPossibility(int num) => _possibilities.Add(num);
 
-    public bool IsEmpty => this.Number == 0;
-
-    public override string ToString()
-    {
-        return this.Number.ToString();
-    }
+    public void ClearPossibilities() => _possibilities.Clear();
 }
