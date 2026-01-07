@@ -4,27 +4,29 @@ public static class Solver
 {
     public static bool Solve(Board board)
     {
-        UpdatePossibilities(board);
+        if (!UpdatePossibilities(board))
+            return false;
         
         var (found, row, col) = FindBestEmptyCell(board);
         if (!found) return true; // Solved
         
         Cell cell = board.GetCell(row, col);
 
-        for (var i = 0; i < cell.Possibilities.Count; i++)
+        for (var i = 0; i < cell.PossibilityCount; i++)
         {
-            int pos = cell.Possibilities[i];
+            int num = cell.Possibilities[i];
+            cell.Number = num;
             
-            cell.Number = pos;
             if (Solve(board))
                 return true;
-            cell.Number = 0;
+            
+            cell.Number = 0; // for the backtracking
         }
 
         return false;
     }
 
-    private static void UpdatePossibilities(Board board)
+    private static bool UpdatePossibilities(Board board)
     {
         for (int i = 0; i < board.Size; i++)
         {
@@ -35,20 +37,21 @@ public static class Solver
                     continue;
                 
                 cell.ClearPossibilities();
-                int a = 0;
                 for (int num = 1; num <= board.Size; num++)
-                {
                     if (board.IsSafe(i, j, num))
-                    {
                         cell.AddPossibility(num);
-                        a++;
-                    }
-                }
 
-                if (cell.Possibilities.Count == 0 && !cell.IsSolved)
-                    Console.WriteLine($"Cell ({i},{j}) has NO possibilities!");
+                // if (cell.PossibilityCount == 1)
+                // {
+                //     cell.Number = cell.Possibilities[0];
+                // }
+
+                if (cell.HasNoPossibilities() && !cell.IsSolved)
+                    return false;
             }
         }
+
+        return true;
     }
 
     private static (bool, int, int) FindBestEmptyCell(Board board)
@@ -64,10 +67,11 @@ public static class Solver
                 var cell = board.GetCell(i, j);
                 if (cell.IsSolved)
                     continue;
-                
-                if (cell.Possibilities.Count < minPossibilities)
+
+                int count = cell.PossibilityCount;
+                if (count < minPossibilities)
                 {
-                    minPossibilities = cell.Possibilities.Count;
+                    minPossibilities = count;
                     foundRow = i;
                     foundCol = j;
                 }

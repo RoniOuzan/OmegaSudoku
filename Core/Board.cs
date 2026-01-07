@@ -16,10 +16,12 @@ public class Board
         {
             for (int j = 0; j < this.Size; j++)
             {
-                this._cells[i, j] = new Cell(cells[i, j]);
+                this._cells[i, j] = new Cell(cells[i, j], this.Size);
             }
         }
     }
+    
+    public Cell[,] GetCells() => this._cells;
 
     public Cell GetCell(int row, int col)
     {
@@ -28,14 +30,9 @@ public class Board
 
     public bool IsSafe(int row, int column, int num)
     {
-        // Check row
-        for (int i = 0; i < this.Size; i++)
-            if (this.GetCell(row, i).Number == num)
-                return false;
-            
-        // Check column
-        for (int i = 0; i < this.Size; i++)
-            if (this.GetCell(i, column).Number == num)
+        // Check rows & columns
+        for (int i = 0; i < Size; i++)
+            if (_cells[row, i].Number == num || _cells[i, column].Number == num)
                 return false;
 
         // Check box
@@ -43,7 +40,7 @@ public class Board
         int startCol = column - (column % this.BoxSize);
         for (int i = 0; i < this.BoxSize; i++)
             for (int j = 0; j < this.BoxSize; j++)
-                if (this.GetCell(i + startRow, j + startCol).Number == num)
+                if (this.GetCell(startRow + i, startCol + j).Number == num)
                     return false;
 
         return true;
