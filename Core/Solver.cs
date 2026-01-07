@@ -12,15 +12,11 @@ public static class Solver
         
         Cell cell = board.GetCell(row, col);
 
-        for (var i = 0; i < cell.PossibilityCount; i++)
+        foreach (int num in cell.EnumeratePossibilities())
         {
-            int num = cell.Possibilities[i];
             cell.Number = num;
-            
-            if (Solve(board))
-                return true;
-            
-            cell.Number = 0; // for the backtracking
+            if (Solve(board)) return true;
+            cell.Number = 0;
         }
 
         return false;

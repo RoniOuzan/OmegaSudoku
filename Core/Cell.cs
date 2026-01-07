@@ -3,8 +3,8 @@
 public class Cell
 {
     private int _number;
-    private int[] _possibilities;
-    private int _possibilitiesCount;
+    private ulong _possibilities;
+    private int _boardSize;
 
     public int Number
     {
@@ -12,25 +12,46 @@ public class Cell
         set => _number = value;
     }
  
-    public int[] Possibilities => this._possibilities;
-    public int PossibilityCount => this._possibilitiesCount;
+    public ulong Possibilities => this._possibilities;
+    public int PossibilityCount => CountBits(this._possibilities);
 
     public Cell(int number, int boardSize)
     {
         this._number = number;
-        this._possibilities = new int[boardSize];
-        this._possibilitiesCount = 0;
+        this._boardSize = boardSize;
+
+        if (number != 0)
+            this._possibilities = 0;
+        else
+            this._possibilities = (1UL << boardSize) - 1;
     }
     
     public bool IsSolved => _number != 0;
     public bool IsEmpty => _number == 0;
 
-    public void AddPossibility(int num) => this._possibilities[this._possibilitiesCount++] = num;
+    public void AddPossibility(int num) => this._possibilities |= 1UL << (num - 1);
 
     public void ClearPossibilities() {
-        this._possibilitiesCount = 0;
-        Array.Fill(this._possibilities, 0);
+        this._possibilities = 0;
     }
 
-    public bool HasNoPossibilities() => this._possibilitiesCount == 0;
+    public bool HasNoPossibilities() => this._possibilities == 0;
+    
+    private static int CountBits(ulong bits)
+    {
+        int count = 0;
+        while (bits != 0)
+        {
+            count++;
+            bits &= bits - 1; // clear lowest set bit
+        }
+        return count;
+    }
+    
+    public IEnumerable<int> EnumeratePossibilities()
+    {
+        for (int i = 0; i < _boardSize; i++)
+            if ((_possibilities & (1UL << i)) != 0)
+                yield return i + 1;
+    }
 }
