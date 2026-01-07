@@ -6,15 +6,15 @@ public static class Solver
     {
         int size = board.Size;
 
-        List<int>[] rowUsed = new List<int>[size];
-        List<int>[] colUsed = new List<int>[size];
-        List<int>[] boxUsed = new List<int>[size];
+        HashSet<int>[] rowUsed = new HashSet<int>[size];
+        HashSet<int>[] colUsed = new HashSet<int>[size];
+        HashSet<int>[] boxUsed = new HashSet<int>[size];
 
         for (int i = 0; i < size; i++)
         {
-            rowUsed[i] = new List<int>();
-            colUsed[i] = new List<int>();
-            boxUsed[i] = new List<int>();
+            rowUsed[i] = new HashSet<int>();
+            colUsed[i] = new HashSet<int>();
+            boxUsed[i] = new HashSet<int>();
         }
 
         for (int i = 0; i < size; i++)
@@ -33,7 +33,7 @@ public static class Solver
         return SolveRecursive(board, rowUsed, colUsed, boxUsed);
     }
 
-    private static bool SolveRecursive(Board board, List<int>[] rowUsed, List<int>[] colUsed, List<int>[] boxUsed)
+    private static bool SolveRecursive(Board board, HashSet<int>[] rowUsed, HashSet<int>[] colUsed, HashSet<int>[] boxUsed)
     {
         var (possibilities, row, col) = FindBestEmptyCell(board, rowUsed, colUsed, boxUsed);
         if (row == -1) return true; // solved because no empty cells left
@@ -60,7 +60,7 @@ public static class Solver
         return false;
     }
 
-    private static (List<int>, int, int) FindBestEmptyCell(Board board, List<int>[] rowUsed, List<int>[] colUsed, List<int>[] boxUsed)
+    private static (List<int>, int, int) FindBestEmptyCell(Board board, HashSet<int>[] rowUsed, HashSet<int>[] colUsed, HashSet<int>[] boxUsed)
     {
         List<int> minPossibilities = new List<int>();
         int foundRow = -1;
@@ -77,10 +77,12 @@ public static class Solver
                 List<int> possibilities = new List<int>();
                 for (int num = 1; num <= board.Size; num++)
                 {
-                    if (!rowUsed[i].Contains(num) && 
-                            !colUsed[j].Contains(num) &&
-                            !boxUsed[BoxIndex(i, j, board.BoxSize)].Contains(num))
+                    if (!rowUsed[i].Contains(num) &&
+                        !colUsed[j].Contains(num) &&
+                        !boxUsed[BoxIndex(i, j, board.BoxSize)].Contains(num))
+                    {
                         possibilities.Add(num);
+                    }
                 }
 
                 // 1 because there won't be fewer possibilities, 0 because its dead end
