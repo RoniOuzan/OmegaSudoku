@@ -7,58 +7,60 @@ class Program
 {
     static void Main(string[] args)
     {
-        int[,] nums =
+        Console.WriteLine("Hello! i am your Sudoku Solver for today :)");
+        Console.WriteLine("Give your sudoku board in 1 line (81 numbers in a row) and use 0 for empty cells.");
+
+        while (true)
         {
-            { 5, 1, 6,  8, 4, 9,  7, 3, 2 },
-            { 3, 0, 7,  6, 0, 5,  0, 0, 0 },
-            { 8, 0, 9,  7, 0, 0,  0, 6, 5 },
-  
-            { 1, 3, 5,  0, 6, 0,  9, 0, 7 },
-            { 4, 7, 2,  5, 9, 1,  0, 0, 6 },
-            { 9, 6, 8,  3, 7, 0,  0, 5, 0 },
-  
-            { 2, 5, 3,  1, 8, 6,  0, 7, 4 },
-            { 6, 8, 4,  2, 0, 7,  5, 0, 0 },
-            { 7, 9, 1,  0, 5, 0,  6, 0, 8 }
-        };
+            Console.WriteLine("\nEnter board:");
+            
+            string input = Console.ReadLine() ?? "";
+            
+            if (!IsInputValid(input)) continue;
+            
+            Board board = Board.FromString(input);
+            
+            Stopwatch stopwatch = Stopwatch.StartNew();
         
-        // {
-        //     {0, 0, 0,  0, 0, 0,  0, 0, 0},
-        //     {0, 0, 0,  0, 0, 3,  0, 8, 5},
-        //     {0, 0, 1,  0, 2, 0,  0, 0, 0},
+            bool solved = Solver.Solve(board);
         
-        //     {0, 0, 0,  5, 0, 7,  0, 0, 0},
-        //     {0, 0, 4,  0, 0, 0,  1, 0, 0},
-        //     {0, 9, 0,  0, 0, 0,  0, 0, 0},
+            stopwatch.Stop();
+
+            Console.WriteLine();
+            if (solved)
+            {
+                board.Print();
+                Console.WriteLine($"Solved in {stopwatch.ElapsedMilliseconds} ms!");
+            }
+            else
+            {
+                Console.WriteLine($"This board is unsolvable! It took {stopwatch.ElapsedMilliseconds} ms to detect.");
+            }
+        }
         
-        //     {5, 0, 0,  0, 0, 0,  0, 7, 3},
-        //     {0, 0, 2,  0, 1, 0,  0, 0, 0},
-        //     {0, 0, 0,  0, 4, 0,  0, 0, 9}
-        // };
-        
-        // {
-        //     {3, 0, 6, 5, 0, 8, 4, 0, 0}, 
-        //     {5, 2, 0, 0, 0, 0, 0, 0, 0}, 
-        //     {0, 8, 7, 0, 0, 0, 0, 3, 1},
-        
-        //     {0, 0, 3,  0, 1, 0,  0, 8, 0}, 
-        //     {9, 0, 0,  8, 6, 3,  0, 0, 5}, 
-        //     {0, 5, 0,  0, 9, 0,  6, 0, 0},
-          
-        //     {1, 3, 0,  0, 0, 0,  2, 5, 0}, 
-        //     {0, 0, 0,  0, 0, 0,  0, 7, 4}, 
-        //     {0, 0, 5,  2, 0, 6,  3, 0, 0}
-        // };
-        
-        Board board = new Board(nums);
-        
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        
-        bool solved = Solver.Solve(board);
-        
-        stopwatch.Stop();
-        
-        board.Print();
-        Console.WriteLine($"\n{solved} in {stopwatch.ElapsedMilliseconds} ms");
+        /*
+         * 516849732307605000809700065135060907472591006968370050253186074684207500791050608
+         * 000000000000003085001020000000507000004000100090000000500000073002010000000040009
+         * 306508400520000000087000031003010080900863005050090600130000250000000074005206300
+         */
+    }
+
+    static bool IsInputValid(string input)
+    {
+        input = string.Concat(input.Where(c => !char.IsWhiteSpace(c)));
+
+        if (input.Length != 81)
+        {
+            Console.WriteLine($"Your input is {input.Length} characters long, it needs to be 81! (9x9)");
+            return false;
+        }
+
+        if (input.Any(c => c < '0' || c > '9'))
+        {
+            Console.WriteLine("Invalid character was found! Only digits are allowed.");
+            return false;
+        }
+
+        return true;
     }
 }

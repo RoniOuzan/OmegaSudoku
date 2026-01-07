@@ -52,4 +52,18 @@ public class Board
 
         return result;
     }
+
+    public static Board FromString(string input)
+    {
+        int[,] board = new  int[9, 9];
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                board[i, j] = input[i * 9 + j] - '0';
+            }
+        }
+
+        return new Board(board);
+    }
 }
