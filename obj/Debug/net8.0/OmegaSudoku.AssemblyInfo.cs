@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OmegaSudoku")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+104af08fe8a380ae56a062654a9caf9f658ae8bb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bfa034535987a17819926dfdf829d13d6cb38441")]
 [assembly: System.Reflection.AssemblyProductAttribute("OmegaSudoku")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OmegaSudoku")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
