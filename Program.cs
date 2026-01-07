@@ -1,9 +1,64 @@
-﻿namespace OmegaSudoku;
+﻿using System.Diagnostics;
+using OmegaSudoku.Core;
+
+namespace OmegaSudoku;
 
 class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Hello, World!");
+        int[,] nums =
+        {
+            { 5, 1, 6,  8, 4, 9,  7, 3, 2 },
+            { 3, 0, 7,  6, 0, 5,  0, 0, 0 },
+            { 8, 0, 9,  7, 0, 0,  0, 6, 5 },
+  
+            { 1, 3, 5,  0, 6, 0,  9, 0, 7 },
+            { 4, 7, 2,  5, 9, 1,  0, 0, 6 },
+            { 9, 6, 8,  3, 7, 0,  0, 5, 0 },
+  
+            { 2, 5, 3,  1, 8, 6,  0, 7, 4 },
+            { 6, 8, 4,  2, 0, 7,  5, 0, 0 },
+            { 7, 9, 1,  0, 5, 0,  6, 0, 8 }
+        };
+        
+        // {
+        //     {0, 0, 0,  0, 0, 0,  0, 0, 0},
+        //     {0, 0, 0,  0, 0, 3,  0, 8, 5},
+        //     {0, 0, 1,  0, 2, 0,  0, 0, 0},
+        
+        //     {0, 0, 0,  5, 0, 7,  0, 0, 0},
+        //     {0, 0, 4,  0, 0, 0,  1, 0, 0},
+        //     {0, 9, 0,  0, 0, 0,  0, 0, 0},
+        
+        //     {5, 0, 0,  0, 0, 0,  0, 7, 3},
+        //     {0, 0, 2,  0, 1, 0,  0, 0, 0},
+        //     {0, 0, 0,  0, 4, 0,  0, 0, 9}
+        // };
+        
+        // {
+        //     {3, 0, 6, 5, 0, 8, 4, 0, 0}, 
+        //     {5, 2, 0, 0, 0, 0, 0, 0, 0}, 
+        //     {0, 8, 7, 0, 0, 0, 0, 3, 1},
+        
+        //     {0, 0, 3,  0, 1, 0,  0, 8, 0}, 
+        //     {9, 0, 0,  8, 6, 3,  0, 0, 5}, 
+        //     {0, 5, 0,  0, 9, 0,  6, 0, 0},
+          
+        //     {1, 3, 0,  0, 0, 0,  2, 5, 0}, 
+        //     {0, 0, 0,  0, 0, 0,  0, 7, 4}, 
+        //     {0, 0, 5,  2, 0, 6,  3, 0, 0}
+        // };
+        
+        Board board = new Board(nums);
+        
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        
+        bool solved = Solver.Solve(board);
+        
+        stopwatch.Stop();
+        
+        board.Print();
+        Console.WriteLine($"\n{solved} in {stopwatch.ElapsedMilliseconds} ms");
     }
 }
