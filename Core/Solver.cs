@@ -1,4 +1,6 @@
-﻿namespace OmegaSudoku.Core;
+﻿using System.Numerics;
+
+namespace OmegaSudoku.Core;
 
 public static class Solver
 {
@@ -12,10 +14,15 @@ public static class Solver
         
         Cell cell = board.GetCell(row, col);
 
-        foreach (int num in cell.EnumeratePossibilities())
+        ulong bits = cell.Possibilities;
+        while (bits != 0)
         {
-            cell.Number = num;
-            if (Solve(board)) return true;
+            int n = BitOperations.TrailingZeroCount(bits); // first 1 bit index
+            bits &= bits - 1; // remove all the first 0 bits
+            cell.Number = n + 1;
+            
+            if (Solve(board)) 
+                return true;
             cell.Number = 0;
         }
 
@@ -36,11 +43,6 @@ public static class Solver
                 for (int num = 1; num <= board.Size; num++)
                     if (board.IsSafe(i, j, num))
                         cell.AddPossibility(num);
-
-                // if (cell.PossibilityCount == 1)
-                // {
-                //     cell.Number = cell.Possibilities[0];
-                // }
 
                 if (cell.HasNoPossibilities() && !cell.IsSolved)
                     return false;

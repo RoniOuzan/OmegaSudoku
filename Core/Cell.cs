@@ -1,4 +1,6 @@
-﻿namespace OmegaSudoku.Core;
+﻿using System.Numerics;
+
+namespace OmegaSudoku.Core;
 
 public class Cell
 {
@@ -13,7 +15,7 @@ public class Cell
     }
  
     public ulong Possibilities => this._possibilities;
-    public int PossibilityCount => CountBits(this._possibilities);
+    public int PossibilityCount => BitOperations.PopCount(this._possibilities);
 
     public Cell(int number, int boardSize)
     {
@@ -36,22 +38,4 @@ public class Cell
     }
 
     public bool HasNoPossibilities() => this._possibilities == 0;
-    
-    private static int CountBits(ulong bits)
-    {
-        int count = 0;
-        while (bits != 0)
-        {
-            count++;
-            bits &= bits - 1; // clear lowest set bit
-        }
-        return count;
-    }
-    
-    public IEnumerable<int> EnumeratePossibilities()
-    {
-        for (int i = 0; i < _boardSize; i++)
-            if ((_possibilities & (1UL << i)) != 0)
-                yield return i + 1;
-    }
 }
