@@ -55,12 +55,13 @@ public class Board
 
     public static Board FromString(string input)
     {
-        int[,] board = new  int[9, 9];
-        for (int i = 0; i < 9; i++)
+        int size = (int)Math.Sqrt(input.Length);
+        int[,] board = new int[size, size];
+        for (int i = 0; i < size; i++)
         {
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < size; j++)
             {
-                board[i, j] = input[i * 9 + j] - '0';
+                board[i, j] = input[i * size + j] - '0';
             }
         }
 
