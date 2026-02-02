@@ -4,16 +4,20 @@ namespace OmegaSudoku.Core;
 
 public class Board
 {
+    public const int Size = 9;
+    public static readonly int CellsCount = Size * Size;
+    public static readonly int BoxSize = (int)Math.Sqrt(Size);
+
     public static void Print(int[,] board)
     {
-        for (int i = 0; i < 9; i++) 
+        for (int i = 0; i < Size; i++) 
         {
-            if (i > 0 && i % 3 == 0)
+            if (i > 0 && i % BoxSize == 0)
                 Console.WriteLine("---------+---------+---------");
 
-            for (int j = 0; j < 9; j++)
+            for (int j = 0; j < Size; j++)
             {
-                if (j > 0 && j % 3 == 0)
+                if (j > 0 && j % BoxSize == 0)
                     Console.Write("|");
                 Console.Write(" " + board[i, j] + " ");
             }
@@ -23,13 +27,12 @@ public class Board
 
     public static int[,] FromString(string input)
     {
-        int size = (int)Math.Sqrt(input.Length);
-        int[,] board = new int[size, size];
-        for (int i = 0; i < size; i++)
+        int[,] board = new int[Size, Size];
+        for (int i = 0; i < Size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (int j = 0; j < Size; j++)
             {
-                board[i, j] = input[i * size + j] - '0';
+                board[i, j] = input[i * Size + j] - '0';
             }
         }
 
