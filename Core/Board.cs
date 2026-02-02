@@ -4,7 +4,7 @@ namespace OmegaSudoku.Core;
 
 public class Board
 {
-    private readonly Cell[,] _cells;
+    private readonly int[,] _cells;
     public int Size { get; }
     public int BoxSize { get; }
 
@@ -13,19 +13,24 @@ public class Board
         this.Size = cells.GetLength(0);
         this.BoxSize = (int) Math.Sqrt(this.Size);
         
-        this._cells = new Cell[this.Size, this.Size];
+        this._cells = new int[this.Size, this.Size];
         for (int i = 0; i < this.Size; i++)
         {
             for (int j = 0; j < this.Size; j++)
             {
-                this._cells[i, j] = new Cell(cells[i, j]);
+                this._cells[i, j] = cells[i, j];
             }
         }
     }
     
-    public Cell GetCell(int row, int col)
+    public int GetCell(int row, int col)
     {
         return this._cells[row, col];
+    }
+    
+    public void SetCell(int row, int col, int num)
+    {
+        this._cells[row, col] = num; 
     }
     
     public void Print()
@@ -39,7 +44,7 @@ public class Board
             {
                 if (j > 0 && j % this.BoxSize == 0)
                     Console.Write("|");
-                Console.Write(" " + this.GetCell(i, j).Number + " ");
+                Console.Write(" " + this.GetCell(i, j) + " ");
             }
             Console.WriteLine();
         }
@@ -50,7 +55,7 @@ public class Board
         string result = "";
         for (int i = 0; i < this.Size; i++)
             for (int j = 0; j < this.Size; j++)
-                result += $"{this.GetCell(i, j).Number}";
+                result += $"{this.GetCell(i, j)}";
 
         return result;
     }

@@ -17,10 +17,10 @@ public static class Solver
         {
             for (int j = 0; j < size; j++)
             {
-                Cell cell = board.GetCell(i, j);
-                if (cell.IsEmpty) continue;
+                int cell = board.GetCell(i, j);
+                if (cell == 0) continue;
 
-                int bit = 1 << cell.Number;
+                int bit = 1 << cell;
                 rowUsed[i] |= bit;
                 colUsed[j] |= bit;
                 boxUsed[BoxIndex(i, j, board.BoxSize)] |= bit;
@@ -37,8 +37,8 @@ public static class Solver
         {
             for (int c = 0; c < size; c++)
             {
-                Cell cell = board.GetCell(r, c);
-                if (cell.IsSolved) continue;
+                int cell = board.GetCell(r, c);
+                if (cell != 0) continue;
 
                 int used = rowUsed[r] | colUsed[c] | boxUsed[BoxIndex(r, c, board.BoxSize)];
                 possibilities[r, c] = allMask & ~used;
@@ -77,7 +77,7 @@ public static class Solver
             int checkpoint = changes.Count;
             
             // Place the number on the cell
-            board.GetCell(r, c).Number = num;
+            board.SetCell(r, c, num);
             rowUsed[r] |= bit;
             colUsed[c] |= bit;
             boxUsed[boxIndex] |= bit;
@@ -93,7 +93,7 @@ public static class Solver
                 return true;
             
             // Backtrack
-            board.GetCell(r, c).Number = 0;
+            board.SetCell(r, c, 0);
             rowUsed[r] &= ~bit;
             colUsed[c] &= ~bit;
             boxUsed[boxIndex] &= ~bit;
@@ -116,7 +116,7 @@ public static class Solver
 
         foreach (var (r, c) in emptyCells)
         {
-            if (!board.GetCell(r, c).IsEmpty)
+            if (board.GetCell(r, c) != 0)
                 continue;
 
             int mask = possibilities[r, c];
@@ -150,7 +150,7 @@ public static class Solver
         // Row
         for (int c = 0; c < board.Size; c++)
         {
-            if (board.GetCell(currentR, c).IsSolved) continue;
+            if (board.GetCell(currentR, c) != 0) continue;
             
             if ((possibilities[currentR, c] & bit) != 0)
             {
@@ -162,7 +162,7 @@ public static class Solver
         // Column
         for (int r = 0; r < board.Size; r++)
         {
-            if (board.GetCell(r, currentC).IsSolved) continue;
+            if (board.GetCell(r, currentC) != 0) continue;
             
             if ((possibilities[r, currentC] & bit) != 0)
             {
@@ -179,7 +179,7 @@ public static class Solver
         {
             for (int c = startCol; c < startCol + boxSize; c++)
             {
-                if (board.GetCell(r, c).IsSolved) continue;
+                if (board.GetCell(r, c) != 0) continue;
                 
                 if ((possibilities[r, c] & bit) != 0)
                 {
