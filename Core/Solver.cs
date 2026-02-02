@@ -1,4 +1,6 @@
-﻿namespace OmegaSudoku.Core;
+﻿using System.Collections.Generic;
+
+namespace OmegaSudoku.Core;
 
 public static class Solver
 {
