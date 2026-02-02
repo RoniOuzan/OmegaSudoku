@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Numerics;
 
 namespace OmegaSudoku.Core;
 
@@ -8,16 +9,9 @@ public static class Solver
     {
         int size = board.Size;
 
-        HashSet<int>[] rowUsed = new HashSet<int>[size];
-        HashSet<int>[] colUsed = new HashSet<int>[size];
-        HashSet<int>[] boxUsed = new HashSet<int>[size];
-
-        for (int i = 0; i < size; i++)
-        {
-            rowUsed[i] = new HashSet<int>();
-            colUsed[i] = new HashSet<int>();
-            boxUsed[i] = new HashSet<int>();
-        }
+        int[] rowUsed = new int[size];
+        int[] colUsed = new int[size];
+        int[] boxUsed = new int[size];
 
         for (int i = 0; i < size; i++)
         {
@@ -26,81 +20,174 @@ public static class Solver
                 Cell cell = board.GetCell(i, j);
                 if (cell.IsEmpty) continue;
 
-                rowUsed[i].Add(cell.Number);
-                colUsed[j].Add(cell.Number);
-                boxUsed[BoxIndex(i, j, board.BoxSize)].Add(cell.Number);
+                int bit = 1 << cell.Number;
+                rowUsed[i] |= bit;
+                colUsed[j] |= bit;
+                boxUsed[BoxIndex(i, j, board.BoxSize)] |= bit;
+            }
+        }
+        
+        int allMask = 0;
+        for (int n = 1; n <= size; n++)
+            allMask |= 1 << n;
+
+        int[,] possibilities = new int[size, size];
+        List<(int r, int c)> emptyCells = new List<(int r, int c)>();
+        for (int r = 0; r < size; r++)
+        {
+            for (int c = 0; c < size; c++)
+            {
+                Cell cell = board.GetCell(r, c);
+                if (cell.IsSolved) continue;
+
+                int used = rowUsed[r] | colUsed[c] | boxUsed[BoxIndex(r, c, board.BoxSize)];
+                possibilities[r, c] = allMask & ~used;
+
+                emptyCells.Add((r, c));
             }
         }
 
-        return SolveRecursive(board, rowUsed, colUsed, boxUsed);
+        return SolveRecursive(board, rowUsed, colUsed, boxUsed, possibilities, emptyCells, new Stack<(int r, int c, int oldMask)>());
     }
 
-    private static bool SolveRecursive(Board board, HashSet<int>[] rowUsed, HashSet<int>[] colUsed, HashSet<int>[] boxUsed)
-    {
-        var (possibilities, row, col) = FindBestEmptyCell(board, rowUsed, colUsed, boxUsed);
-        if (row == -1) return true; // solved because no empty cells left
-        if (possibilities.Count == 0) return false; // dead end because no possibilities
+    private static bool SolveRecursive(
+        Board board, 
+        int[] rowUsed, 
+        int[] colUsed, 
+        int[] boxUsed,
+        int[,] possibilities,
+        List<(int r, int c)> emptyCells,
+        Stack<(int r, int c, int oldMask)> changes
+    ) {
+        var (possible, r, c) = FindBestEmptyCell(board, possibilities, emptyCells);
+        if (!possible) return false; // dead end because the amount of possibilities is 0
+        if (r == -1) return true; // No empty cells left, so the board is solved
+        
+        int options = possibilities[r, c];
+        int boxIndex = BoxIndex(r, c, board.BoxSize);
 
-        foreach (int num in possibilities)
+        // No options lefts
+        while (options != 0)
         {
-            int boxIndex = BoxIndex(row, col, board.BoxSize);
+            int bit = options & -options;
+            options ^= bit;
             
-            board.GetCell(row, col).Number = num;
-            rowUsed[row].Add(num);
-            colUsed[col].Add(num);
-            boxUsed[boxIndex].Add(num);
-
-            if (SolveRecursive(board, rowUsed, colUsed, boxUsed))
+            int num = BitOperations.TrailingZeroCount(bit);
+            
+            int checkpoint = changes.Count;
+            
+            // Place the number on the cell
+            board.GetCell(r, c).Number = num;
+            rowUsed[r] |= bit;
+            colUsed[c] |= bit;
+            boxUsed[boxIndex] |= bit;
+            
+            // Save and clear this cell's possibilities
+            changes.Push((r, c, possibilities[r, c]));
+            possibilities[r, c] = 0;
+            
+            UpdateNeighbors(board, possibilities, r, c, bit, changes);
+            
+            if (SolveRecursive(board, rowUsed, colUsed, boxUsed,
+                    possibilities, emptyCells, changes))
                 return true;
             
-            board.GetCell(row, col).Number = 0;
-            rowUsed[row].Remove(num);
-            colUsed[col].Remove(num);
-            boxUsed[boxIndex].Remove(num);
+            // Backtrack
+            board.GetCell(r, c).Number = 0;
+            rowUsed[r] &= ~bit;
+            colUsed[c] &= ~bit;
+            boxUsed[boxIndex] &= ~bit;
+
+            while (changes.Count > checkpoint)
+            {
+                var (oldR, oldC, oldMask) = changes.Pop();
+                possibilities[oldR, oldC] = oldMask;
+            }
         }
 
         return false;
     }
 
-    private static (List<int>, int, int) FindBestEmptyCell(Board board, HashSet<int>[] rowUsed, HashSet<int>[] colUsed, HashSet<int>[] boxUsed)
+    private static (bool, int, int) FindBestEmptyCell(Board board, int[,] possibilities, List<(int r, int c)> emptyCells)
     {
-        List<int> minPossibilities = new List<int>();
-        int foundRow = -1;
-        int foundCol = -1;
+        int bestR = -1;
+        int bestC = -1;
+        int minCount = int.MaxValue;
 
-        for (int i = 0; i < board.Size; i++)
+        foreach (var (r, c) in emptyCells)
         {
-            for (int j = 0; j < board.Size; j++)
+            if (!board.GetCell(r, c).IsEmpty)
+                continue;
+
+            int mask = possibilities[r, c];
+            int count = BitOperations.PopCount((uint)mask);
+
+            if (count == 0) 
+                return (false, -1, -1);
+            
+            if (count < minCount)
             {
-                var cell = board.GetCell(i, j);
-                if (cell.IsSolved)
-                    continue;
-
-                List<int> possibilities = new List<int>();
-                for (int num = 1; num <= board.Size; num++)
-                {
-                    if (!rowUsed[i].Contains(num) &&
-                        !colUsed[j].Contains(num) &&
-                        !boxUsed[BoxIndex(i, j, board.BoxSize)].Contains(num))
-                    {
-                        possibilities.Add(num);
-                    }
-                }
-
-                // 1 because there won't be fewer possibilities, 0 because its dead end
-                if (possibilities.Count == 1 || possibilities.Count == 0)
-                    return (possibilities, i, j);
+                minCount = count;
+                bestR = r;
+                bestC = c;
                 
-                if (foundRow == -1 || possibilities.Count < minPossibilities.Count)
-                {
-                    minPossibilities = possibilities;
-                    foundRow = i;
-                    foundCol = j;
-                }
+                if (count == 1) 
+                    return (true, bestR, bestC);
             }
         }
 
-        return (minPossibilities, foundRow, foundCol);
+        return (true, bestR, bestC);
+    }
+
+    private static void UpdateNeighbors(
+        Board board, 
+        int[,] possibilities, 
+        int currentR, 
+        int currentC, 
+        int bit, 
+        Stack<(int r, int c, int oldMask)> changes
+    ) {
+        // Row
+        for (int c = 0; c < board.Size; c++)
+        {
+            if (board.GetCell(currentR, c).IsSolved) continue;
+            
+            if ((possibilities[currentR, c] & bit) != 0)
+            {
+                changes.Push((currentR, c, possibilities[currentR, c]));
+                possibilities[currentR, c] &= ~bit;
+            }
+        }
+
+        // Column
+        for (int r = 0; r < board.Size; r++)
+        {
+            if (board.GetCell(r, currentC).IsSolved) continue;
+            
+            if ((possibilities[r, currentC] & bit) != 0)
+            {
+                changes.Push((r, currentC, possibilities[r, currentC]));
+                possibilities[r, currentC] &= ~bit;
+            }
+        }
+
+        // Box
+        int boxSize = board.BoxSize;
+        int startRow = (currentR / boxSize) * boxSize;
+        int startCol = (currentC / boxSize) * boxSize;
+        for (int r = startRow; r < startRow + boxSize; r++)
+        {
+            for (int c = startCol; c < startCol + boxSize; c++)
+            {
+                if (board.GetCell(r, c).IsSolved) continue;
+                
+                if ((possibilities[r, c] & bit) != 0)
+                {
+                    changes.Push((r, c, possibilities[r, c]));
+                    possibilities[r, c] &= ~bit;
+                }
+            }
+        }
     }
     
     private static int BoxIndex(int row, int column, int boxSize)
