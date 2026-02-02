@@ -1,4 +1,6 @@
-﻿namespace OmegaSudoku.Core;
+﻿using System;
+
+namespace OmegaSudoku.Core;
 
 public class Board
 {
