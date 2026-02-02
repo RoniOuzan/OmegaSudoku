@@ -17,9 +17,7 @@ class Program
             Console.WriteLine("\nEnter board:");
             
             string input = Console.ReadLine() ?? "";
-            
             if (!IsInputValid(input)) continue;
-            
             int[,] board = Board.FromString(input);
             
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -28,16 +26,7 @@ class Program
         
             stopwatch.Stop();
 
-            Console.WriteLine();
-            if (solved)
-            {
-                Board.Print(board);
-                Console.WriteLine($"Solved in {stopwatch.ElapsedMilliseconds} ms!");
-            }
-            else
-            {
-                Console.WriteLine($"This board is unsolvable! It took {stopwatch.ElapsedMilliseconds} ms to detect.");
-            }
+            PrintResults(board, solved, stopwatch.ElapsedMilliseconds);
         }
 
         /*
@@ -52,18 +41,32 @@ class Program
     {
         input = string.Concat(input.Where(c => !char.IsWhiteSpace(c)));
 
-        if (input.Length != 81)
+        if (input.Length != Board.CellsCount)
         {
-            Console.WriteLine($"Your input is {input.Length} characters long, it needs to be 81! (9x9)");
+            Console.WriteLine($"Your input is {input.Length} characters long, it needs to be {Board.CellsCount}! ({Board.Size}x{Board.Size})");
             return false;
         }
 
-        if (input.Any(c => c < '0' || c > '9'))
+        if (input.Any(c => c - '0' is < 0 or > Board.Size))
         {
             Console.WriteLine("Invalid character was found! Only digits are allowed.");
             return false;
         }
 
         return true;
+    }
+
+    private static void PrintResults(int[,] board, bool solved, long milliseconds)
+    {
+        Console.WriteLine();
+        if (solved)
+        {
+            Board.Print(board);
+            Console.WriteLine($"Solved in {milliseconds} ms!");
+        }
+        else
+        {
+            Console.WriteLine($"This board is unsolvable! It took {milliseconds} ms to detect.");
+        }
     }
 }

@@ -8,17 +8,14 @@ public static class Solver
 {
     public static bool Solve(int[,] board)
     {
-        int size = board.GetLength(0);
-        int boxSize = (int)Math.Sqrt(size);
+        int[] rowUsed = new int[Board.Size];
+        int[] colUsed = new int[Board.Size];
+        int[] boxUsed = new int[Board.Size];
+        int allMask = (1 << Board.Size) - 1;
 
-        int[] rowUsed = new int[size];
-        int[] colUsed = new int[size];
-        int[] boxUsed = new int[size];
-        int allMask = (1 << size) - 1;
-
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < Board.Size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (int j = 0; j < Board.Size; j++)
             {
                 int cell = board[i, j];
                 if (cell == 0) continue;
@@ -26,20 +23,20 @@ public static class Solver
                 int bit = 1 << (cell - 1);
                 rowUsed[i] |= bit;
                 colUsed[j] |= bit;
-                boxUsed[BoxIndex(i, j, boxSize)] |= bit;
+                boxUsed[BoxIndex(i, j)] |= bit;
             }
         }
 
-        int[,] possibilities = new int[size, size];
+        int[,] possibilities = new int[Board.Size, Board.Size];
         List<(int r, int c)> emptyCells = new List<(int r, int c)>();
-        for (int r = 0; r < size; r++)
+        for (int r = 0; r < Board.Size; r++)
         {
-            for (int c = 0; c < size; c++)
+            for (int c = 0; c < Board.Size; c++)
             {
                 int cell = board[r, c];
                 if (cell != 0) continue;
 
-                int used = rowUsed[r] | colUsed[c] | boxUsed[BoxIndex(r, c, boxSize)];
+                int used = rowUsed[r] | colUsed[c] | boxUsed[BoxIndex(r, c)];
                 possibilities[r, c] = allMask & ~used;
                 
                 emptyCells.Add((r, c));
@@ -64,8 +61,7 @@ public static class Solver
         
         int options = possibilities[r, c];
         
-        int boxSize = (int) Math.Sqrt(board.GetLength(0));
-        int boxIndex = BoxIndex(r, c, boxSize);
+        int boxIndex = BoxIndex(r, c);
 
         while (options != 0)
         {
@@ -105,7 +101,7 @@ public static class Solver
                         int oldBit = 1 << (cell - 1);
                         rowUsed[oldR] &= ~oldBit;
                         colUsed[oldC] &= ~oldBit;
-                        boxUsed[BoxIndex(oldR, oldC, boxSize)] &= ~oldBit;
+                        boxUsed[BoxIndex(oldR, oldC)] &= ~oldBit;
                     }
                     board[oldR, oldC] = 0;
                 }
@@ -155,12 +151,10 @@ public static class Solver
 
     private static int CountNearEmptyCells(int[,] board, int r, int c)
     {
-        int size = board.GetLength(0);
-        int boxSize = (int)Math.Sqrt(size);
         int count = 0;
 
         // Count the empty cells in rows and columns
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < Board.Size; i++)
         {
             // Row
             if (i != c &&board[r, i] == 0) count++;
@@ -169,12 +163,12 @@ public static class Solver
         }
 
         // Count empty cells in box (avoid double counting row/col)
-        int boxR = (r / boxSize) * boxSize;
-        int boxC = (c / boxSize) * boxSize;
-        for (int i = boxR; i < boxR + boxSize; i++)
+        int boxR = (r / Board.BoxSize) * Board.BoxSize;
+        int boxC = (c / Board.BoxSize) * Board.BoxSize;
+        for (int i = boxR; i < boxR + Board.BoxSize; i++)
         {
             if (i == r) continue;
-            for (int j = boxC; j < boxC + boxSize; j++)
+            for (int j = boxC; j < boxC + Board.BoxSize; j++)
             {
                 if (j == c) continue;
                 
@@ -194,9 +188,6 @@ public static class Solver
         int[] boxUsed, 
         Stack<(int r, int c, int oldMask, bool bitSet)> changes
     ) {
-        int size = board.GetLength(0);
-        int boxSize = (int)Math.Sqrt(size);
-        
         Queue<(int r, int c)> queue = new Queue<(int r, int c)>();
         queue.Enqueue((r, c));
 
@@ -206,29 +197,29 @@ public static class Solver
             int cell = board[currentR, currentC];
             int bit = 1 << (cell - 1);
 
-            for (int i = 0; i < size; i++)
+            for (int i = 0; i < Board.Size; i++)
             {
                 // Row
                 if (i != currentC && 
-                    !ProcessNeighbor(currentR, i, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
+                    !ProcessNeighbor(currentR, i, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue)) 
                     return false;
                 
                 // Col
                 if (i != currentR && 
-                    !ProcessNeighbor(i, currentC, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
+                    !ProcessNeighbor(i, currentC, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue)) 
                     return false;
             }
 
             // Box
-            int boxR = (currentR / boxSize) * boxSize;
-            int boxC = (currentC / boxSize) * boxSize;
-            for (int i = boxR; i < boxR + boxSize; i++)
+            int boxR = (currentR / Board.BoxSize) * Board.BoxSize;
+            int boxC = (currentC / Board.BoxSize) * Board.BoxSize;
+            for (int i = boxR; i < boxR + Board.BoxSize; i++)
             {
                 if (i == currentR) continue;
-                for (int j = boxC; j < boxC + boxSize; j++)
+                for (int j = boxC; j < boxC + Board.BoxSize; j++)
                 {
                     if (j == currentC) continue;
-                    if (!ProcessNeighbor(i, j, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
+                    if (!ProcessNeighbor(i, j, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue)) 
                         return false;
                 }
             }
@@ -247,8 +238,7 @@ public static class Solver
         int[] colUsed, 
         int[] boxUsed, 
         Stack<(int r, int c, int oldMask, bool bitSet)> changes, 
-        Queue<(int r, int c)> queue, 
-        int boxSize
+        Queue<(int r, int c)> queue
     ) {
         if (board[r, c] != 0) return true;
 
@@ -268,7 +258,7 @@ public static class Solver
                 
                 int nextBit = 1 << (nextNum - 1);
                 // check if this move is actually valid
-                if ((rowUsed[r] & nextBit) != 0 || (colUsed[c] & nextBit) != 0 || (boxUsed[BoxIndex(r, c, boxSize)] & nextBit) != 0)
+                if ((rowUsed[r] & nextBit) != 0 || (colUsed[c] & nextBit) != 0 || (boxUsed[BoxIndex(r, c)] & nextBit) != 0)
                     return false;
 
                 var last = changes.Pop();
@@ -277,7 +267,7 @@ public static class Solver
                 board[r, c] = nextNum;
                 rowUsed[r] |= nextBit;
                 colUsed[c] |= nextBit;
-                boxUsed[BoxIndex(r, c, boxSize)] |= nextBit;
+                boxUsed[BoxIndex(r, c)] |= nextBit;
                 
                 possibilities[r, c] = 0;
                 queue.Enqueue((r, c));
@@ -286,8 +276,8 @@ public static class Solver
         return true;
     }
 
-    private static int BoxIndex(int row, int col, int boxSize)
+    private static int BoxIndex(int row, int col)
     {
-        return (row / boxSize) * boxSize + (col / boxSize);
+        return (row / Board.BoxSize) * Board.BoxSize + (col / Board.BoxSize);
     }
 }
