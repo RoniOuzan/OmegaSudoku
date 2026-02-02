@@ -167,11 +167,13 @@ public static class Solver
             for (int i = 0; i < size; i++)
             {
                 // Row
-                if (!ProcessNeighbor(currentR, i, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
+                if (i != currentC && 
+                    !ProcessNeighbor(currentR, i, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
                     return false;
                 
                 // Col
-                if (!ProcessNeighbor(i, currentC, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
+                if (i != currentR && 
+                    !ProcessNeighbor(i, currentC, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
                     return false;
             }
 
@@ -180,8 +182,10 @@ public static class Solver
             int boxC = (currentC / boxSize) * boxSize;
             for (int i = boxR; i < boxR + boxSize; i++)
             {
+                if (i == currentR) continue;
                 for (int j = boxC; j < boxC + boxSize; j++)
                 {
+                    if (j == currentC) continue;
                     if (!ProcessNeighbor(i, j, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue, boxSize)) 
                         return false;
                 }
