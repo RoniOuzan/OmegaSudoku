@@ -115,13 +115,12 @@ public static class Solver
         return false;
     }
     
-    
-
     private static (bool, int, int) FindBestEmptyCell(int[,] board, int[,] possibilities, List<(int r, int c)> emptyCells)
     {
         int bestR = -1;
         int bestC = -1;
         int minCount = int.MaxValue;
+        int maxNearEmptyCells = -1;
 
         foreach (var (r, c) in emptyCells)
         {
@@ -134,12 +133,55 @@ public static class Solver
                 minCount = count;
                 bestR = r;
                 bestC = c;
-                if (count == 1)
-                    break; // 1 is the smallest
+                maxNearEmptyCells = CountNearEmptyCells(board, r, c);
+            
+                if (count == 1) 
+                    return (true, r, c);
+            }
+            else if (count == minCount)
+            {
+                int nearEmptyCells = CountNearEmptyCells(board, r, c);
+                if (nearEmptyCells > maxNearEmptyCells)
+                {
+                    maxNearEmptyCells = nearEmptyCells;
+                    bestR = r;
+                    bestC = c;
+                }
             }
         }
 
         return (true, bestR, bestC);
+    }
+
+    private static int CountNearEmptyCells(int[,] board, int r, int c)
+    {
+        int size = board.GetLength(0);
+        int boxSize = (int)Math.Sqrt(size);
+        int count = 0;
+
+        // Count the empty cells in rows and columns
+        for (int i = 0; i < size; i++)
+        {
+            // Row
+            if (i != c &&board[r, i] == 0) count++;
+            // Col
+            if (i != r &&board[i, c] == 0) count++;
+        }
+
+        // Count empty cells in box (avoid double counting row/col)
+        int boxR = (r / boxSize) * boxSize;
+        int boxC = (c / boxSize) * boxSize;
+        for (int i = boxR; i < boxR + boxSize; i++)
+        {
+            if (i == r) continue;
+            for (int j = boxC; j < boxC + boxSize; j++)
+            {
+                if (j == c) continue;
+                
+                if (board[i, j] == 0) count++;
+            }
+        }
+        return count;
     }
 
     private static bool UpdateNeighbors(
