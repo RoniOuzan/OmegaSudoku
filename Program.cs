@@ -20,7 +20,7 @@ class Program
             
             if (!IsInputValid(input)) continue;
             
-            Board board = Board.FromString(input);
+            int[,] board = Board.FromString(input);
             
             Stopwatch stopwatch = Stopwatch.StartNew();
         
@@ -31,7 +31,7 @@ class Program
             Console.WriteLine();
             if (solved)
             {
-                board.Print();
+                Board.Print(board);
                 Console.WriteLine($"Solved in {stopwatch.ElapsedMilliseconds} ms!");
             }
             else
