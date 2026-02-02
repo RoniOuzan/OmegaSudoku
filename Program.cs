@@ -17,9 +17,7 @@ class Program
             Console.WriteLine("\nEnter board:");
             
             string input = Console.ReadLine() ?? "";
-            
             if (!IsInputValid(input)) continue;
-            
             int[,] board = Board.FromString(input);
             
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -28,16 +26,7 @@ class Program
         
             stopwatch.Stop();
 
-            Console.WriteLine();
-            if (solved)
-            {
-                Board.Print(board);
-                Console.WriteLine($"Solved in {stopwatch.ElapsedMilliseconds} ms!");
-            }
-            else
-            {
-                Console.WriteLine($"This board is unsolvable! It took {stopwatch.ElapsedMilliseconds} ms to detect.");
-            }
+            PrintResults(board, solved, stopwatch.ElapsedMilliseconds);
         }
 
         /*
@@ -65,5 +54,19 @@ class Program
         }
 
         return true;
+    }
+
+    private static void PrintResults(int[,] board, bool solved, long milliseconds)
+    {
+        Console.WriteLine();
+        if (solved)
+        {
+            Board.Print(board);
+            Console.WriteLine($"Solved in {milliseconds} ms!");
+        }
+        else
+        {
+            Console.WriteLine($"This board is unsolvable! It took {milliseconds} ms to detect.");
+        }
     }
 }
