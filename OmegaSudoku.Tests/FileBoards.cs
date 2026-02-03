@@ -8,15 +8,15 @@ public class FileBoards
     public void BoardsFromFile()
     {
         var parent = Directory.GetParent(Directory.GetCurrentDirectory());
-        string? projectDir = parent?.Parent?.Parent?.FullName;
+        var projectDir = parent?.Parent?.Parent?.FullName;
         Assert.True(projectDir != null);
-        string path = Path.Combine(projectDir, "boards.txt");;
+        var path = Path.Combine(projectDir, "boards.txt");;
         string[] lines = File.ReadAllLines(path);
         
-        for (int i = 0; i < lines.Length; i++)
+        foreach (var line in lines)
         {
             // Arrange
-            int[,] board = Board.FromString(lines[i]);
+            int[,] board = Board.FromString(line);
             int[,] original = (int[,])board.Clone();
         
             // Act

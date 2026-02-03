@@ -13,11 +13,6 @@ The project is modular, with separate Core logic, an application interface, and 
 - Automated xUnit tests to verify solver correctness.
 - Timed solver to measure performance (in milliseconds).
 
-## Project Structure
-- **Core** – contains `Board.cs` and `Solver.cs`.
-- **App** – simple interface to run and solve Sudoku boards.
-- **Tests** – automated tests ensuring the Solver works correctly and efficiently, including reading boards from files.
-
 ## How it Solves
 OmegaSudoku's Solver uses a combination of **backtracking**, **forward-checking**, and **heuristics** to efficiently solve Sudoku boards:
 
@@ -48,6 +43,11 @@ OmegaSudoku's Solver uses a combination of **backtracking**, **forward-checking*
 
 This combination of **MRV heuristic**, **forward-checking**, and **efficient bit operations** ensures that even hard Sudoku puzzles can be solved quickly, in under 1 second for 9x9 boards.
 
+## Project Structure
+- **Core** – contains `Board.cs` and `Solver.cs` and more.
+- **App** – simple interface to run and solve Sudoku boards.
+- **Tests** – automated tests ensuring the Solver works correctly and efficiently, including reading boards from files.
+- 
 ## Example Usage
 ```csharp
 var (solved, ms) = Solver.TimedSolve(board);

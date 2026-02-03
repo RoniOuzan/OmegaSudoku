@@ -1,6 +1,6 @@
 ﻿namespace OmegaSudoku.Core;
 
-public class Board
+public static class Board
 {
     public const int Size = 9;
     public static readonly int CellsCount = Size * Size;
@@ -63,10 +63,14 @@ public class Board
             bool[] colCheck = new bool[9];
             for (int j = 0; j < 9; j++)
             {
-                int r = board[i,j];
-                int c = board[j,i];
-                if (r < 1 || r > 9 || rowCheck[r-1]) return false;
-                if (c < 1 || c > 9 || colCheck[c-1]) return false;
+                int r = board[i, j];
+                int c = board[j, i];
+                
+                if (r < 1 || r > 9 || rowCheck[r - 1]) 
+                    return false;
+                if (c < 1 || c > 9 || colCheck[c - 1]) 
+                    return false;
+                
                 rowCheck[r-1] = true;
                 colCheck[c-1] = true;
             }
@@ -81,9 +85,10 @@ public class Board
                 for (int r = boxRow * 3; r < boxRow * 3 + 3; r++)
                 for (int c = boxCol * 3; c < boxCol * 3 + 3; c++)
                 {
-                    int val = board[r,c];
-                    if (val < 1 || val > 9 || boxCheck[val-1]) return false;
-                    boxCheck[val-1] = true;
+                    int cell = board[r, c];
+                    if (cell < 1 || cell > 9 || boxCheck[cell-1]) 
+                        return false;
+                    boxCheck[cell - 1] = true;
                 }
             }
         }
