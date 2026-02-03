@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using OmegaSudoku.Core;
+﻿using OmegaSudoku.Core;
 
 namespace OmegaSudoku.App;
 
@@ -28,6 +27,7 @@ class Program
          * 000000000000003085001020000000507000004000100090000000500000073002010000000040009
          * 306508400520000000087000031003010080900863005050090600130000250000000074005206300
          * 000006000059000008200008000045000000003000000006003054000325006000000000000000000
+         * 000870600200000000000100000060054000000000021400000000070000050000200300500001000
          */
     }
 
@@ -56,7 +56,9 @@ class Program
         if (solved)
         {
             Board.Print(board);
-            Console.WriteLine($"Solved in {milliseconds} ms!");
+            Console.WriteLine(Board.IsValidSudoku(board)
+                ? $"Solved in {milliseconds} ms!"
+                : $"Didn't solved in {milliseconds} ms!");
         }
         else
         {

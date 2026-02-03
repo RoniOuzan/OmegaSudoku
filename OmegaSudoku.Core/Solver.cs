@@ -5,11 +5,36 @@ namespace OmegaSudoku.Core;
 
 public static class Solver
 {
+    private static readonly int[,] BoxLookup = new int[Board.Size, Board.Size];
+    private static readonly int[,] ConnectivityMap =
+    {
+        { 2, 2, 2, 2, 2, 2, 2, 2, 2 },
+        { 2, 3, 3, 2, 3, 3, 2, 3, 3 },
+        { 2, 3, 3, 2, 3, 3, 2, 3, 3 },
+        { 2, 2, 2, 4, 4, 4, 2, 2, 2 },
+        { 2, 3, 3, 4, 5, 4, 3, 3, 2 },
+        { 2, 2, 2, 4, 4, 4, 2, 2, 2 },
+        { 2, 3, 3, 2, 3, 3, 2, 3, 3 },
+        { 2, 3, 3, 2, 3, 3, 2, 3, 3 },
+        { 2, 2, 2, 2, 2, 2, 2, 2, 2 }
+    };
+
+    static Solver()
+    {
+        for (int r = 0; r < 9; r++)
+        {
+            for (int c = 0; c < 9; c++)
+            {
+                BoxLookup[r, c] = BoxIndex(r, c);
+            }
+        }
+    }
+    
     public static (bool, long) TimedSolve(int[,] board)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         
-        bool solved = Solver.Solve(board);
+        bool solved = Solve(board);
         
         stopwatch.Stop();
 
@@ -33,7 +58,7 @@ public static class Solver
                 int bit = 1 << (cell - 1);
                 rowUsed[i] |= bit;
                 colUsed[j] |= bit;
-                boxUsed[BoxIndex(i, j)] |= bit;
+                boxUsed[BoxLookup[i, j]] |= bit;
             }
         }
 
@@ -46,7 +71,7 @@ public static class Solver
                 int cell = board[r, c];
                 if (cell != 0) continue;
 
-                int used = rowUsed[r] | colUsed[c] | boxUsed[BoxIndex(r, c)];
+                int used = rowUsed[r] | colUsed[c] | boxUsed[BoxLookup[r, c]];
                 possibilities[r, c] = allMask & ~used;
                 
                 emptyCells.Add((r, c));
@@ -71,7 +96,7 @@ public static class Solver
         
         int options = possibilities[r, c];
         
-        int boxIndex = BoxIndex(r, c);
+        int boxIndex = BoxLookup[r, c];
 
         while (options != 0)
         {
@@ -111,7 +136,7 @@ public static class Solver
                         int oldBit = 1 << (cell - 1);
                         rowUsed[oldR] &= ~oldBit;
                         colUsed[oldC] &= ~oldBit;
-                        boxUsed[BoxIndex(oldR, oldC)] &= ~oldBit;
+                        boxUsed[BoxLookup[oldR, oldC]] &= ~oldBit;
                     }
                     board[oldR, oldC] = 0;
                 }
@@ -125,37 +150,51 @@ public static class Solver
     {
         int bestR = -1;
         int bestC = -1;
-        int minCount = int.MaxValue;
-        int maxNearEmptyCells = -1;
-
+        int minCount = 10;
+        int maxConnectivity = -1;
+        int maxNear = -1;
+        
         foreach (var (r, c) in emptyCells)
         {
             if (board[r, c] != 0) continue;
-
+            
             int count = BitOperations.PopCount((uint)possibilities[r, c]);
-            if (count == 0)  return (false, -1, -1);
+            if (count == 0) return (false, -1, -1);
+            if (count == 1) return (true, r, c);
             if (count < minCount)
             {
-                minCount = count;
-                bestR = r;
-                bestC = c;
-                maxNearEmptyCells = CountNearEmptyCells(board, r, c);
-            
-                if (count == 1) 
-                    return (true, r, c);
+                minCount = count; 
+                bestR = r; 
+                bestC = c; 
+                
+                maxConnectivity = ConnectivityMap[r, c];
+                maxNear = -1;
             }
             else if (count == minCount)
             {
-                int nearEmptyCells = CountNearEmptyCells(board, r, c);
-                if (nearEmptyCells > maxNearEmptyCells)
+                if (maxNear == -1) maxNear = CountNearEmptyCells(board, bestR, bestC);
+             
+                // Tie-breaker: Pick the cell with the highest nearby empty cells
+                int near = CountNearEmptyCells(board, r, c);
+                if (near > maxNear)
                 {
-                    maxNearEmptyCells = nearEmptyCells;
+                    maxNear = near;
                     bestR = r;
                     bestC = c;
                 }
+                else if (near == maxNear)
+                {
+                    // Tie-breaker: Pick the cell with the highest connectivity to other constraints
+                    int currentConnectivity = ConnectivityMap[r, c];
+                    if (currentConnectivity > maxConnectivity)
+                    {
+                        maxConnectivity = currentConnectivity;
+                        bestR = r;
+                        bestC = c;
+                    } 
+                }
             }
         }
-
         return (true, bestR, bestC);
     }
 
@@ -268,7 +307,7 @@ public static class Solver
                 
                 int nextBit = 1 << (nextNum - 1);
                 // check if this move is actually valid
-                if ((rowUsed[r] & nextBit) != 0 || (colUsed[c] & nextBit) != 0 || (boxUsed[BoxIndex(r, c)] & nextBit) != 0)
+                if ((rowUsed[r] & nextBit) != 0 || (colUsed[c] & nextBit) != 0 || (boxUsed[BoxLookup[r, c]] & nextBit) != 0)
                     return false;
 
                 var last = changes.Pop();
@@ -277,7 +316,7 @@ public static class Solver
                 board[r, c] = nextNum;
                 rowUsed[r] |= nextBit;
                 colUsed[c] |= nextBit;
-                boxUsed[BoxIndex(r, c)] |= nextBit;
+                boxUsed[BoxLookup[r, c]] |= nextBit;
                 
                 possibilities[r, c] = 0;
                 queue.Enqueue((r, c));
