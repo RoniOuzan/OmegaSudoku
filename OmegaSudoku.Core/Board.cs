@@ -23,8 +23,25 @@ public class Board
         }
     }
 
+    public static string FlatString(int[,] board)
+    {
+        string text = string.Empty;
+        
+        for (int i = 0; i < Size; i++) 
+        {
+            for (int j = 0; j < Size; j++)
+            {
+                text += board[i, j];
+            }
+        }
+
+        return text;
+    }
+
     public static int[,] FromString(string input)
     {
+        input = string.Concat(input.Where(c => !char.IsWhiteSpace(c)));
+        
         int[,] board = new int[Size, Size];
         for (int i = 0; i < Size; i++)
         {
