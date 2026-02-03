@@ -18,13 +18,16 @@ class Program
             if (!IsInputValid(input)) continue;
             int[,] board = Board.FromString(input);
             
-            Stopwatch stopwatch = Stopwatch.StartNew();
-        
-            bool solved = Solver.Solve(board);
-        
-            stopwatch.Stop();
+            var (solved, milliseconds) = Solver.TimedSolve(board);
 
-            PrintResults(board, solved, stopwatch.ElapsedMilliseconds);
+            PrintResults(board, solved, milliseconds);
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    Console.Write(board[i, j]);
+                }
+            }
         }
 
         /*

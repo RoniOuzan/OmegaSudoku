@@ -1,9 +1,21 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 
 namespace OmegaSudoku.Core;
 
 public static class Solver
 {
+    public static (bool, long) TimedSolve(int[,] board)
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        
+        bool solved = Solver.Solve(board);
+        
+        stopwatch.Stop();
+
+        return (solved, stopwatch.ElapsedMilliseconds);
+    }
+    
     public static bool Solve(int[,] board)
     {
         int[] rowUsed = new int[Board.Size];
