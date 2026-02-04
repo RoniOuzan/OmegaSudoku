@@ -2,93 +2,143 @@
 
 public static class Board
 {
+    /// <summary>
+    /// Size of the Sudoku board (number of rows and columns).
+    /// </summary>
     public const int Size = 9;
-    public static readonly int CellsCount = Size * Size;
+
+    /// <summary>
+    /// Total number of cells on the board.
+    /// </summary>
+    public const int CellsCount = Size * Size;
+
+    /// <summary>
+    /// Size of one sub-box (e.g., 3 for a 9x9 Sudoku).
+    /// </summary>
     public static readonly int BoxSize = (int)Math.Sqrt(Size);
 
+    /// <summary>
+    /// Prints the board to the console in a formatted grid layout.
+    /// </summary>
+    /// <param name="board">The Sudoku board.</param>
     public static void Print(int[,] board)
     {
-        for (int i = 0; i < Size; i++) 
+        for (int r = 0; r < Size; r++)
         {
-            if (i > 0 && i % BoxSize == 0)
+            if (r > 0 && r % BoxSize == 0)
                 Console.WriteLine("---------+---------+---------");
 
-            for (int j = 0; j < Size; j++)
+            for (int c = 0; c < Size; c++)
             {
-                if (j > 0 && j % BoxSize == 0)
+                if (c > 0 && c % BoxSize == 0)
                     Console.Write("|");
-                Console.Write(" " + board[i, j] + " ");
+
+                Console.Write($" {board[r, c]} ");
             }
+
             Console.WriteLine();
         }
     }
 
+    /// <summary>
+    /// Converts the board into a single flat string of digits (row-major order).
+    /// </summary>
+    /// <param name="board">The Sudoku board.</param>
+    /// <returns>A string representation of all 81 cells.</returns>
     public static string FlatString(int[,] board)
     {
         string text = string.Empty;
-        
         for (int i = 0; i < Size; i++) 
-        {
             for (int j = 0; j < Size; j++)
-            {
                 text += board[i, j];
-            }
-        }
 
         return text;
     }
 
+    /// <summary>
+    /// Creates a Sudoku board from a string containing 81 digits.
+    /// Whitespace is ignored.
+    /// </summary>
+    /// <param name="input">String containing the board values.</param>
+    /// <returns>A 9x9 Sudoku board.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown if the input does not contain exactly 81 digits or invalid character.
+    /// </exception>
     public static int[,] FromString(string input)
     {
         input = string.Concat(input.Where(c => !char.IsWhiteSpace(c)));
-        
+
+        if (input.Length != CellsCount)
+            throw new ArgumentException($"Your input has {input.Length} digits, must contain exactly {CellsCount} digits.");
+
         int[,] board = new int[Size, Size];
-        for (int i = 0; i < Size; i++)
+        for (int i = 0; i < CellsCount; i++)
         {
-            for (int j = 0; j < Size; j++)
+            char c = input[i];
+            if (!char.IsDigit(c))
             {
-                board[i, j] = input[i * Size + j] - '0';
+                string pointerLine = new string(' ', i) + "^";
+                throw new ArgumentException(
+                    $"Invalid character found at index {i}:\n" +
+                    $"{input}\n" +
+                    $"{pointerLine}");
             }
+
+            board[i / Size, i % Size] = c - '0';
         }
 
         return board;
     }
-    
+
+    /// <summary>
+    /// Determines whether a fully filled Sudoku board is valid.
+    /// </summary>
+    /// <param name="board">The Sudoku board.</param>
+    /// <returns>
+    /// <c>true</c> if the board satisfies all Sudoku constraints; otherwise, <c>false</c>.
+    /// </returns>
     public static bool IsValidSudoku(int[,] board)
     {
-        // Row and Cols
-        for (int i = 0; i < 9; i++)
+        // Check rows and columns
+        for (int i = 0; i < Size; i++)
         {
-            bool[] rowCheck = new bool[9];
-            bool[] colCheck = new bool[9];
-            for (int j = 0; j < 9; j++)
+            bool[] rowCheck = new bool[Size];
+            bool[] colCheck = new bool[Size];
+
+            for (int j = 0; j < Size; j++)
             {
-                int r = board[i, j];
-                int c = board[j, i];
-                
-                if (r < 1 || r > 9 || rowCheck[r - 1]) 
+                int row = board[i, j];
+                int col = board[j, i];
+
+                if (rowCheck[row - 1])
                     return false;
-                if (c < 1 || c > 9 || colCheck[c - 1]) 
+
+                if (colCheck[col - 1])
                     return false;
-                
-                rowCheck[r-1] = true;
-                colCheck[c-1] = true;
+
+                rowCheck[row - 1] = true;
+                colCheck[col - 1] = true;
             }
         }
 
-        // Boxes
-        for (int boxRow = 0; boxRow < 3; boxRow++)
+        // Check boxes
+        for (int boxRow = 0; boxRow < BoxSize; boxRow++)
         {
-            for (int boxCol = 0; boxCol < 3; boxCol++)
+            for (int boxCol = 0; boxCol < BoxSize; boxCol++)
             {
-                bool[] boxCheck = new bool[9];
-                for (int r = boxRow * 3; r < boxRow * 3 + 3; r++)
-                for (int c = boxCol * 3; c < boxCol * 3 + 3; c++)
+                bool[] boxCheck = new bool[Size];
+
+                for (int r = boxRow * BoxSize; r < boxRow * BoxSize + BoxSize; r++)
                 {
-                    int cell = board[r, c];
-                    if (cell < 1 || cell > 9 || boxCheck[cell-1]) 
-                        return false;
-                    boxCheck[cell - 1] = true;
+                    for (int c = boxCol * BoxSize; c < boxCol * BoxSize + BoxSize; c++)
+                    {
+                        int cell = board[r, c];
+
+                        if (boxCheck[cell - 1])
+                            return false;
+
+                        boxCheck[cell - 1] = true;
+                    }
                 }
             }
         }

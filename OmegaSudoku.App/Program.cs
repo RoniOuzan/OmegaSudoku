@@ -11,35 +11,22 @@ class Program
 
         while (true)
         {
-            Console.WriteLine("\nEnter board:");
+            try
+            {
+                Console.WriteLine("\nEnter board:");
+                
+                string input = Console.ReadLine() ?? "";
+                int[,] board = Board.FromString(input);
             
-            string input = Console.ReadLine() ?? "";
-            if (!IsInputValid(input)) continue;
-            int[,] board = Board.FromString(input);
-            
-            var (solved, milliseconds) = Solver.TimedSolve(board);
+                var (solved, milliseconds) = Solver.TimedSolve(board);
 
-            PrintResults(board, solved, milliseconds);
+                PrintResults(board, solved, milliseconds);
+            }
+            catch (ArgumentException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
-    }
-
-    private static bool IsInputValid(string input)
-    {
-        input = string.Concat(input.Where(c => !char.IsWhiteSpace(c)));
-
-        if (input.Length != Board.CellsCount)
-        {
-            Console.WriteLine($"Your input is {input.Length} characters long, it needs to be {Board.CellsCount}! ({Board.Size}x{Board.Size})");
-            return false;
-        }
-
-        if (input.Any(c => c - '0' is < 0 or > Board.Size))
-        {
-            Console.WriteLine("Invalid character was found! Only digits are allowed.");
-            return false;
-        }
-
-        return true;
     }
 
     private static void PrintResults(int[,] board, bool solved, long milliseconds)

@@ -7,18 +7,30 @@ public static class Propagation
     /// <summary>
     /// Propagates constraints to neighboring cells when a number is placed.
     /// </summary>
+    /// <param name="board">The current Sudoku board. Empty cells are represented by 0.</param>
+    /// <param name="rowUsed">Bitmask array representing which numbers are used in each row.</param>
+    /// <param name="colUsed">Bitmask array representing which numbers are used in each column.</param>
+    /// <param name="boxUsed">Bitmask array representing which numbers are used in each box.</param>
+    /// <param name="possibilities">Bitmask array representing possible numbers for each cell.</param>
+    /// <param name="changes">Stack used to track changes for efficient backtracking.</param>
+    /// <param name="row">Row index of the updated cell.</param>
+    /// <param name="col">Column index of the updated cell.</param>
+    /// <returns>
+    /// <c>true</c> if propagation succeeds without contradictions; 
+    /// <c>false</c> if a contradiction is detected (a cell has no valid possibilities).
+    /// </returns>
     public static bool UpdateNeighbors(
         int[,] board, 
-        int[,] possibilities, 
-        int r, 
-        int c, 
         int[] rowUsed, 
         int[] colUsed, 
         int[] boxUsed, 
-        Stack<(int r, int c, int oldMask, bool bitSet)> changes
+        int[,] possibilities, 
+        Stack<(int r, int c, int oldMask, bool bitSet)> changes,
+        int row, 
+        int col
     ) {
         Queue<(int r, int c)> queue = new Queue<(int r, int c)>();
-        queue.Enqueue((r, c));
+        queue.Enqueue((row, col));
 
         while (queue.Count > 0)
         {
@@ -58,8 +70,23 @@ public static class Propagation
     }
 
     /// <summary>
-    /// Processes a neighbor cell during propagation, updating its possibilities.
+    /// Processes a neighboring cell during propagation by removing an invalid bit
+    /// from its possibilities and triggering further propagation if needed.
     /// </summary>
+    /// <param name="r">Row index of the neighbor cell.</param>
+    /// <param name="c">Column index of the neighbor cell.</param>
+    /// <param name="bit">Bit representing the number to eliminate.</param>
+    /// <param name="board">Current Sudoku board.</param>
+    /// <param name="possibilities">Bitmask of possible values per cell.</param>
+    /// <param name="rowUsed">Bitmask array for row constraints.</param>
+    /// <param name="colUsed">Bitmask array for column constraints.</param>
+    /// <param name="boxUsed">Bitmask array for box constraints.</param>
+    /// <param name="changes">Stack used to record changes for rollback.</param>
+    /// <param name="queue">Queue of cells to process for further propagation.</param>
+    /// <returns>
+    /// <c>true</c> if the neighbor remains valid; 
+    /// <c>false</c> if a contradiction is found.
+    /// </returns>
     private static bool ProcessNeighbor(
         int r, 
         int c, 
@@ -72,27 +99,32 @@ public static class Propagation
         Stack<(int r, int c, int oldMask, bool bitSet)> changes, 
         Queue<(int r, int c)> queue
     ) {
+        // Ignore already filled cells
         if (board[r, c] != 0) return true;
 
+        // If this bit is not present, nothing to remove
         if ((possibilities[r, c] & bit) == 0) return true;
         
-        // update the neighbors
+        // Save previous state before modifying
         changes.Push((r, c, possibilities[r, c], false));
         possibilities[r, c] &= ~bit;
-
-        // check for propagation
+        
         int count = BitOperations.PopCount((uint)possibilities[r, c]);
+        // No possibilities left -> contradiction
         if (count == 0) return false;
 
+        // If only one possibility remains, auto-assign
         if (count == 1)
         {
             int nextNum = BitOperations.TrailingZeroCount(possibilities[r, c]) + 1;
-                
             int nextBit = 1 << (nextNum - 1);
-            // check if this move is actually valid
-            if ((rowUsed[r] & nextBit) != 0 || (colUsed[c] & nextBit) != 0 || (boxUsed[Solver.BoxLookup[r, c]] & nextBit) != 0)
+            
+            // Validate assignment against constraints
+            if ((rowUsed[r] & nextBit) != 0 || (colUsed[c] & nextBit) != 0 ||
+                (boxUsed[Solver.BoxLookup[r, c]] & nextBit) != 0)
                 return false;
 
+            // Mark this change as a committed placement
             var last = changes.Pop();
             changes.Push((last.r, last.c, last.oldMask, true));
 
