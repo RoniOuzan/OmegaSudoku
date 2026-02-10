@@ -25,14 +25,15 @@ public static class Propagation
     /// <c>false</c> if a contradiction is detected (a cell has no valid possibilities).
     /// </returns>
     public static bool UpdateNeighbors(SolverState state, int row, int col) {
-        Queue<Cell> queue = new Queue<Cell>();
+        var queue = new Queue<Cell>();
         queue.Enqueue(new Cell(row, col));
 
         while (queue.Count > 0)
         {
             Cell cell = queue.Dequeue();
-            int currentR = cell.Row;
-            int currentC = cell.Col;
+            var currentR = cell.Row;
+            var currentC = cell.Col;
+            
             int number = state.Board[currentR, currentC];
             int bit = 1 << (number - 1);
 

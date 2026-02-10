@@ -71,7 +71,7 @@ public static class Board
         if (input.Length != CellsCount)
             throw new ArgumentException($"Your input has {input.Length} digits, must contain exactly {CellsCount} digits.");
 
-        int[,] board = new int[Size, Size];
+        var board = new int[Size, Size];
         for (int i = 0; i < CellsCount; i++)
         {
             char c = input[i];
@@ -102,8 +102,8 @@ public static class Board
         // Check rows and columns
         for (int i = 0; i < Size; i++)
         {
-            bool[] rowCheck = new bool[Size];
-            bool[] colCheck = new bool[Size];
+            var rowCheck = new bool[Size];
+            var colCheck = new bool[Size];
 
             for (int j = 0; j < Size; j++)
             {
@@ -126,7 +126,7 @@ public static class Board
         {
             for (int boxCol = 0; boxCol < BoxSize; boxCol++)
             {
-                bool[] boxCheck = new bool[Size];
+                var boxCheck = new bool[Size];
 
                 for (int r = boxRow * BoxSize; r < boxRow * BoxSize + BoxSize; r++)
                 {

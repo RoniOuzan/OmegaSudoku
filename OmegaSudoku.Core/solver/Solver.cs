@@ -67,9 +67,9 @@ public static class Solver
     /// </summary>
     private static SolverState InitializeState(int[,] board)
     {
-        int[] rowUsed = new int[Board.Size];
-        int[] colUsed = new int[Board.Size];
-        int[] boxUsed = new int[Board.Size];
+        var rowUsed = new int[Board.Size];
+        var colUsed = new int[Board.Size];
+        var boxUsed = new int[Board.Size];
 
         // Initialize the bitmasks for row, column, and box usage
         for (int i = 0; i < Board.Size; i++)

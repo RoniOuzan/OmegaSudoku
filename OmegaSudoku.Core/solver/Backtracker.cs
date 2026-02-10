@@ -87,8 +87,8 @@ public static class Backtracker
         while (state.Changes.Count > checkpoint)
         {
             var change = state.Changes.Pop();
-            int oldR = change.Row;
-            int oldC = change.Col;
+            var oldR = change.Row;
+            var oldC = change.Col;
             
             // Restore the bit
             if (change.BitSet)
@@ -163,16 +163,18 @@ public static class Backtracker
         // If it has fewer possibilities it's better
         if (cellPossibilities < minPossibilities)
             return true;
-            
-        if (cellPossibilities != minPossibilities) return false;
-            
-        // Tie-Breaker for empty neighbors and then connectivity
-        int neighbors = CountEmptyCellsNeighbors(board, r, c);
-        int connectivity = ConnectivityMap[r, c];
 
-        // If it has more neighbors, if they are the same -> compare connectivity
-        return neighbors > bestNeighbors ||
-               (neighbors == bestNeighbors && connectivity > bestConnectivity);
+        // Tie-Breaker for empty neighbors and then connectivity
+        if (cellPossibilities == minPossibilities)
+        {
+            int neighbors = CountEmptyCellsNeighbors(board, r, c);
+            int connectivity = ConnectivityMap[r, c];
+
+            // If it has more neighbors, if they are the same -> compare connectivity
+            return neighbors > bestNeighbors ||
+                   (neighbors == bestNeighbors && connectivity > bestConnectivity);
+        }
+        return false;
     }
 
     /// <summary>
