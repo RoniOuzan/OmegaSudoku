@@ -145,4 +145,18 @@ public static class Board
 
         return true;
     }
+    
+    
+
+    /// <summary>
+    /// Calculates the box index for a given row and column.
+    /// Box index is determined by which 3x3 (or general BoxSize x BoxSize) box contains the cell.
+    /// </summary>
+    /// <param name="row">The row index of the cell.</param>
+    /// <param name="col">The column index of the cell.</param>
+    /// <returns>The index of the box that contains the cell. Boxes are indexed left-to-right, top-to-bottom, starting at 0.</returns>
+    public static int GetBoxIndex(int row, int col)
+    {
+        return (row / Board.BoxSize) * Board.BoxSize + (col / Board.BoxSize);
+    }
 }

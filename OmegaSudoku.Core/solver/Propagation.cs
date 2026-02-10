@@ -2,33 +2,29 @@
 
 namespace OmegaSudoku.Core;
 
+/// <summary>
+/// Handles constraint propagation after a number is placed.
+/// 
+/// Uses forward-checking with cascading assignments:
+/// - Removes invalid candidates from peers.
+/// - Auto-assigns cells reduced to a single possibility.
+/// - Detects contradictions early.
+/// </summary>
 public static class Propagation
 {
     /// <summary>
-    /// Propagates constraints to neighboring cells when a number is placed.
+    /// Propagates constraints starting from the specified cell.
+    /// 
+    /// Uses a queue-based approach to repeatedly eliminate invalid
+    /// candidates from neighbors and trigger further assignments.
+    /// 
+    /// Returns <c>false</c> if a contradiction is detected.
     /// </summary>
-    /// <param name="board">The current Sudoku board. Empty cells are represented by 0.</param>
-    /// <param name="rowUsed">Bitmask array representing which numbers are used in each row.</param>
-    /// <param name="colUsed">Bitmask array representing which numbers are used in each column.</param>
-    /// <param name="boxUsed">Bitmask array representing which numbers are used in each box.</param>
-    /// <param name="possibilities">Bitmask array representing possible numbers for each cell.</param>
-    /// <param name="changes">Stack used to track changes for efficient backtracking.</param>
-    /// <param name="row">Row index of the updated cell.</param>
-    /// <param name="col">Column index of the updated cell.</param>
     /// <returns>
     /// <c>true</c> if propagation succeeds without contradictions; 
     /// <c>false</c> if a contradiction is detected (a cell has no valid possibilities).
     /// </returns>
-    public static bool UpdateNeighbors(
-        int[,] board, 
-        int[] rowUsed, 
-        int[] colUsed, 
-        int[] boxUsed, 
-        int[,] possibilities, 
-        Stack<BoardChange> changes,
-        int row, 
-        int col
-    ) {
+    public static bool UpdateNeighbors(SolverState state, int row, int col) {
         Queue<Cell> queue = new Queue<Cell>();
         queue.Enqueue(new Cell(row, col));
 
@@ -37,19 +33,19 @@ public static class Propagation
             Cell cell = queue.Dequeue();
             int currentR = cell.Row;
             int currentC = cell.Col;
-            int number = board[currentR, currentC];
+            int number = state.Board[currentR, currentC];
             int bit = 1 << (number - 1);
 
             for (int i = 0; i < Board.Size; i++)
             {
                 // Row
                 if (i != currentC && 
-                    !ProcessNeighbor(currentR, i, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue)) 
+                    !ProcessNeighbor(currentR, i, bit, state, queue)) 
                     return false;
                 
                 // Col
                 if (i != currentR && 
-                    !ProcessNeighbor(i, currentC, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue)) 
+                    !ProcessNeighbor(i, currentC, bit, state, queue)) 
                     return false;
             }
 
@@ -62,7 +58,7 @@ public static class Propagation
                 for (int j = boxC; j < boxC + Board.BoxSize; j++)
                 {
                     if (j == currentC) continue;
-                    if (!ProcessNeighbor(i, j, bit, board, possibilities, rowUsed, colUsed, boxUsed, changes, queue)) 
+                    if (!ProcessNeighbor(i, j, bit, state, queue)) 
                         return false;
                 }
             }
@@ -72,19 +68,13 @@ public static class Propagation
     }
 
     /// <summary>
-    /// Processes a neighboring cell during propagation by removing an invalid bit
-    /// from its possibilities and triggering further propagation if needed.
+    /// Removes a candidate value from a neighboring cell.
+    /// 
+    /// If the cell is reduced to a single possibility, it is
+    /// automatically assigned and added to the propagation queue.
+    /// 
+    /// Returns <c>false</c> if the cell becomes invalid.
     /// </summary>
-    /// <param name="r">Row index of the neighbor cell.</param>
-    /// <param name="c">Column index of the neighbor cell.</param>
-    /// <param name="bit">Bit representing the number to eliminate.</param>
-    /// <param name="board">Current Sudoku board.</param>
-    /// <param name="possibilities">Bitmask of possible values per cell.</param>
-    /// <param name="rowUsed">Bitmask array for row constraints.</param>
-    /// <param name="colUsed">Bitmask array for column constraints.</param>
-    /// <param name="boxUsed">Bitmask array for box constraints.</param>
-    /// <param name="changes">Stack used to record changes for rollback.</param>
-    /// <param name="queue">Queue of cells to process for further propagation.</param>
     /// <returns>
     /// <c>true</c> if the neighbor remains valid; 
     /// <c>false</c> if a contradiction is found.
@@ -93,14 +83,16 @@ public static class Propagation
         int r, 
         int c, 
         int bit, 
-        int[,] board, 
-        int[,] possibilities, 
-        int[] rowUsed, 
-        int[] colUsed, 
-        int[] boxUsed, 
-        Stack<BoardChange> changes, 
+        SolverState state,
         Queue<Cell> queue
     ) {
+        var board = state.Board;
+        var rowUsed = state.RowUsed;
+        var colUsed = state.ColUsed;
+        var boxUsed = state.BoxUsed;
+        var possibilities = state.Possibilities;
+        var changes = state.Changes;
+        
         // Ignore already filled cells
         if (board[r, c] != 0) return true;
 

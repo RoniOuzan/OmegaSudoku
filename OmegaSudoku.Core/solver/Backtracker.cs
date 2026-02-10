@@ -2,6 +2,15 @@
 
 namespace OmegaSudoku.Core;
 
+/// <summary>
+/// Implements the recursive search engine for Sudoku solving.
+/// 
+/// Uses:
+/// - Backtracking
+/// - Bitmask constraints
+/// - Constraint propagation
+/// - MRV (Minimum Remaining Values) with tie-breaking heuristics
+/// </summary>
 public static class Backtracker
 {
     /// Precomputed connectivity map used for tie-breaking when selecting the next empty cell.
@@ -22,28 +31,13 @@ public static class Backtracker
     /// <summary>
     /// Recursively solves a Sudoku board using backtracking, bitmask, propagation and MRV.
     /// </summary>
-    /// <param name="board">The current Sudoku board. Empty cells are represented by 0.</param>
-    /// <param name="rowUsed">Bitmask array representing which numbers are used in each row.</param>
-    /// <param name="colUsed">Bitmask array representing which numbers are used in each column.</param>
-    /// <param name="boxUsed">Bitmask array representing which numbers are used in each box.</param>
-    /// <param name="possibilities">Bitmask array representing possible numbers for each cell.</param>
-    /// <param name="emptyCells">List of the empty cells on the board to fill.</param>
-    /// <param name="changes">Stack used to track changes for efficient backtracking.</param>
     /// <returns><c>true</c> if the board was successfully solved; otherwise, <c>false</c>.</returns>
-    public static bool SolveRecursive(
-        int[,] board, 
-        int[] rowUsed, 
-        int[] colUsed, 
-        int[] boxUsed,
-        int[,] possibilities,
-        List<Cell> emptyCells,
-        Stack<BoardChange> changes
-    ) {
-        var (possible, r, c) = FindBestEmptyCell(board, possibilities, emptyCells);
+    public static bool SolveRecursive(SolverState state) {
+        var (possible, r, c) = FindBestEmptyCell(state);
         if (!possible) return false; // dead end because cell has no possibilities
-        if (r == -1) return true; // No empty cells left, so the board is solved
+        if (r == -1) return true;    // No empty cells left, so the board is solved
         
-        int options = possibilities[r, c];
+        int options = state.Possibilities[r, c];
 
         while (options != 0)
         {
@@ -52,107 +46,74 @@ public static class Backtracker
             options ^= bit;
             int num = BitOperations.TrailingZeroCount(bit) + 1; // +1 because index 0 is the first number
             
-            int checkpoint = changes.Count; // to backtrack after
-            PlaceNumber(board, rowUsed, colUsed, boxUsed, possibilities, changes, r, c, num, bit);
+            int checkpoint = state.Changes.Count; // to backtrack after
+            PlaceNumber(state, r, c, num, bit);
 
             // Propagate and Update Neighbors Uses
-            if (Propagation.UpdateNeighbors(board, rowUsed, colUsed, boxUsed, possibilities, changes, r, c))
+            if (Propagation.UpdateNeighbors(state, r, c))
             {
-                if (SolveRecursive(board, rowUsed, colUsed, boxUsed, possibilities, emptyCells, changes))
+                if (SolveRecursive(state))
                     return true;
             }
 
             // Backtrack: undo changes made after checkpoint
-            RollbackChanges(board, rowUsed, colUsed, boxUsed, possibilities, checkpoint, changes);
+            RollbackChanges(state, checkpoint);
         }
         return false;
     }
-    
+
     /// <summary>
-    /// Places a number on the board in the given place.
-    /// Also updates the bitmask, every possibility and everything.
+    /// Places a number in a cell and updates all constraint masks.
+    /// The previous state is recorded for backtracking.
     /// </summary>
-    /// <param name="board">Current state of the Sudoku board.</param>
-    /// <param name="rowUsed">Bitmask array representing which numbers are used in each row.</param>
-    /// <param name="colUsed">Bitmask array representing which numbers are used in each column.</param>
-    /// <param name="boxUsed">Bitmask array representing which numbers are used in each box.</param>
-    /// <param name="possibilities">Current bitmask of possible numbers for each cell.</param>
-    /// <param name="changes">Stack used to track changes for efficient backtracking.</param>
-    /// <param name="row">Row index of the cell.</param>
-    /// <param name="col">Column index of the cell.</param>
-    /// <param name="num">Number to put on the given cell.</param>
-    /// <param name="bit">A bit of the given cell for the bitmask.</param>
-    private static void PlaceNumber(
-        int[,] board,
-        int[] rowUsed,
-        int[] colUsed,
-        int[] boxUsed,
-        int[,] possibilities,
-        Stack<BoardChange> changes,
-        int row, int col, int num, int bit)
-    {
+    private static void PlaceNumber(SolverState state, int row, int col, int num, int bit) {
         // Place the number on the cell
-        board[row, col] = num;
-        rowUsed[row] |= bit;
-        colUsed[col] |= bit;
-        boxUsed[Solver.BoxLookup[row, col]] |= bit;
+        state.Board[row, col] = num;
+        state.RowUsed[row] |= bit;
+        state.ColUsed[col] |= bit;
+        state.BoxUsed[Solver.BoxLookup[row, col]] |= bit;
 
         // Save and clear this cell's possibilities
-        changes.Push(new BoardChange(row, col, possibilities[row, col], true));
-        possibilities[row, col] = 0;
+        state.Changes.Push(new BoardChange(row, col, state.Possibilities[row, col], true));
+        state.Possibilities[row, col] = 0;
     }
 
     /// <summary>
-    /// Rollbacks all the changes that was made after the checkpoint.
+    /// Reverts all changes performed after the specified checkpoint.
+    /// Restores board values, masks, and possibility states.
     /// </summary>
-    /// <param name="board">Current state of the Sudoku board.</param>
-    /// <param name="rowUsed">Bitmask array representing which numbers are used in each row.</param>
-    /// <param name="colUsed">Bitmask array representing which numbers are used in each column.</param>
-    /// <param name="boxUsed">Bitmask array representing which numbers are used in each box.</param>
-    /// <param name="possibilities">Current bitmask of possible numbers for each cell.</param>
-    /// <param name="checkpoint"></param>
-    /// <param name="changes">Stack used to track changes to rollback them.</param>
-    private static void RollbackChanges(
-        int[,] board,
-        int[] rowUsed, 
-        int[] colUsed, 
-        int[] boxUsed,
-        int[,] possibilities,
-        int checkpoint,
-        Stack<BoardChange> changes
-    )
+    private static void RollbackChanges(SolverState state, int checkpoint)
     {
-        while (changes.Count > checkpoint)
+        while (state.Changes.Count > checkpoint)
         {
-            var change = changes.Pop();
+            var change = state.Changes.Pop();
             int oldR = change.Row;
             int oldC = change.Col;
             
             // Restore the bit
             if (change.BitSet)
             {
-                int cell = board[oldR, oldC];
+                int cell = state.Board[oldR, oldC];
                 if (cell != 0)
                 {
                     int oldBit = 1 << (cell - 1);
-                    rowUsed[oldR] &= ~oldBit;
-                    colUsed[oldC] &= ~oldBit;
-                    boxUsed[Solver.BoxLookup[oldR, oldC]] &= ~oldBit;
+                    state.RowUsed[oldR] &= ~oldBit;
+                    state.ColUsed[oldC] &= ~oldBit;
+                    state.BoxUsed[Solver.BoxLookup[oldR, oldC]] &= ~oldBit;
                 }
-                board[oldR, oldC] = 0;
+                state.Board[oldR, oldC] = 0;
             }
             
-            possibilities[oldR, oldC] = change.OldMask;
+            state.Possibilities[oldR, oldC] = change.OldMask;
         }
     }
     
     /// <summary>
-    /// Selects the next empty cell to attempt using Minimum Remaining Values (MRV) 
-    /// and tie-breaking heuristics based on nearby empty cells and connectivity (in order).
+    /// Selects the next empty cell using:
+    /// 1. MRV (fewest remaining possibilities)
+    /// 2. Number of empty neighbors
+    /// 3. Connectivity weight
     /// </summary>
-    /// <param name="board">Current state of the Sudoku board.</param>
-    /// <param name="possibilities">Current bitmask of possible numbers for each cell.</param>
-    /// <param name="emptyCells">List of empty cells on the board.</param>
     /// <returns>
     /// A tuple of:
     /// <list type="bullet">
@@ -161,7 +122,7 @@ public static class Backtracker
     /// <item><c>col</c>: Column index of the selected cell.</item>
     /// </list>
     /// </returns>
-    private static (bool possible, int row, int col) FindBestEmptyCell(int[,] board, int[,] possibilities, List<Cell> emptyCells)
+    private static (bool possible, int row, int col) FindBestEmptyCell(SolverState state)
     {
         int bestR = -1;
         int bestC = -1;
@@ -170,29 +131,33 @@ public static class Backtracker
         int bestConnectivity = -1;
         int bestNeighbors = -1;
         
-        foreach (Cell cell in emptyCells)
+        foreach (Cell cell in state.EmptyCells)
         {
             int r = cell.Row;
             int c = cell.Col;
-            if (board[r, c] != 0) continue;
+            if (state.Board[r, c] != 0) continue;
             
             // Gets the amount of possibilities
-            int cellPossibilities = BitOperations.PopCount((uint)possibilities[r, c]);
+            int cellPossibilities = BitOperations.PopCount((uint)state.Possibilities[r, c]);
             if (cellPossibilities == 0) return (false, -1, -1);
             if (cellPossibilities == 1) return (true, r, c);
 
-            if (CompareCell(board, cellPossibilities, r, c, minPossibilities, bestNeighbors, bestConnectivity))
+            if (CompareCell(state.Board, cellPossibilities, r, c, minPossibilities, bestNeighbors, bestConnectivity))
             {
                 bestR = r;
                 bestC = c;
                 minPossibilities = cellPossibilities;
-                bestNeighbors = CountEmptyCellsNeighbors(board, r, c);
+                bestNeighbors = CountEmptyCellsNeighbors(state.Board, r, c);
                 bestConnectivity = ConnectivityMap[r, c];
             }
         }
         return (true, bestR, bestC);
     }
         
+    /// <summary>
+    /// Determines whether the current cell is a better candidate
+    /// than the current best according to MRV and tie-break rules.
+    /// </summary>
     private static bool CompareCell(int[,] board, int cellPossibilities, int r, int c, int minPossibilities, int bestNeighbors, int bestConnectivity)
     {
         // If it has fewer possibilities it's better
@@ -211,11 +176,9 @@ public static class Backtracker
     }
 
     /// <summary>
-    /// Counts the number of empty neighboring cells in the same row, column, and box for a given cell.
+    /// Counts empty cells in the same row, column, and box.
+    /// Used as a secondary heuristic for tie-breaking.
     /// </summary>
-    /// <param name="board">Current Sudoku board.</param>
-    /// <param name="r">Row index of the cell.</param>
-    /// <param name="c">Column index of the cell.</param>
     /// <returns>The count of empty neighboring cells.</returns>
     private static int CountEmptyCellsNeighbors(int[,] board, int r, int c)
     {

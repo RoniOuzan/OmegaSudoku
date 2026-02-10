@@ -2,6 +2,6 @@
 
 public readonly struct Cell(int row, int col)
 {
-    public int Row { get; } = row;
-    public int Col { get; } = col;
+    public readonly int Row = row;
+    public readonly int Col = col;
 }

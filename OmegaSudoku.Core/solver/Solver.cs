@@ -2,6 +2,16 @@
 
 namespace OmegaSudoku.Core;
 
+/// <summary>
+/// Entry point for solving Sudoku boards.
+/// 
+/// This class is responsible for:
+/// 1. Preparing the internal solver state from an input board.
+/// 2. Delegating the actual search to the backtracking engine.
+/// 
+/// The recursive search logic is intentionally separated into <see cref="Backtracker"/>
+/// to keep initialization and search concerns isolated.
+/// </summary>
 public static class Solver
 {
     /// Lookup table to convert a (row, column) pair to the corresponding box index on the Sudoku board.
@@ -14,7 +24,7 @@ public static class Solver
         // Initialize Box Lookup
         for (int r = 0; r < Board.Size; r++)
             for (int c = 0; c < Board.Size; c++)
-                BoxLookup[r, c] = BoxIndex(r, c);
+                BoxLookup[r, c] = Board.GetBoxIndex(r, c);
     }
     
     /// <summary>
@@ -22,8 +32,12 @@ public static class Solver
     /// Updates the given board with the solved board and returns whether it was solved along with the time taken.
     /// </summary>
     /// <param name="board">A 2D  array representing the Sudoku board. Empty cells are represented by 0</param>
-    /// <returns>If the board was solved and the time it took in milliseconds.</returns>
-    public static (bool, long) TimedSolve(int[,] board)
+    /// <returns>
+    /// A tuple containing:
+    /// - <c>solved</c>: whether a valid solution was found.
+    /// - <c>ms</c>: elapsed time in milliseconds.
+    /// </returns>
+    public static (bool solved, long ms) TimedSolve(int[,] board)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         bool solved = Solve(board);
@@ -38,6 +52,20 @@ public static class Solver
     /// <param name="board">A 2D  array representing the Sudoku board. Empty cells are represented by 0.</param>
     /// <returns><c>true</c> if the board was successfully solved; otherwise, <c>false</c>.</returns>
     public static bool Solve(int[,] board)
+    {
+        SolverState state = InitializeState(board);
+        return Backtracker.SolveRecursive(state);
+    }
+
+    /// <summary>
+    /// Builds the internal <see cref="SolverState"/> required by the backtracking engine.
+    /// 
+    /// This method:
+    /// - Initializes row/column/box usage bitmasks.
+    /// - Computes initial possibility masks for all empty cells.
+    /// - Collects coordinates of empty cells.
+    /// </summary>
+    private static SolverState InitializeState(int[,] board)
     {
         int[] rowUsed = new int[Board.Size];
         int[] colUsed = new int[Board.Size];
@@ -74,19 +102,15 @@ public static class Solver
                 emptyCells.Add(new Cell(r, c));
             }
         }
-
-        return Backtracker.SolveRecursive(board, rowUsed, colUsed, boxUsed, possibilities, emptyCells, new Stack<BoardChange>(200));
-    }
-
-    /// <summary>
-    /// Calculates the box index for a given row and column.
-    /// Box index is determined by which 3x3 (or general BoxSize x BoxSize) box contains the cell.
-    /// </summary>
-    /// <param name="row">The row index of the cell.</param>
-    /// <param name="col">The column index of the cell.</param>
-    /// <returns>The index of the box that contains the cell. Boxes are indexed left-to-right, top-to-bottom, starting at 0.</returns>
-    private static int BoxIndex(int row, int col)
-    {
-        return (row / Board.BoxSize) * Board.BoxSize + (col / Board.BoxSize);
+        
+        return new SolverState(
+            board,
+            rowUsed,
+            colUsed,
+            boxUsed,
+            possibilities,
+            emptyCells,
+            new Stack<BoardChange>()
+        );
     }
 }
