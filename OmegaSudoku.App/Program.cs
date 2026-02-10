@@ -16,9 +16,9 @@ class Program
                 Console.WriteLine("\nEnter board:");
                 
                 string input = Console.ReadLine() ?? "";
-                int[,] board = Board.FromString(input);
+                int[,] board = Board.FromString(input, 9);
             
-                var (solved, milliseconds) = Solver.TimedSolve(board);
+                (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
                 PrintResults(board, solved, milliseconds);
             }

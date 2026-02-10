@@ -7,20 +7,20 @@ public class FileBoards
     [Fact]
     public void BoardsFromFile()
     {
-        var parent = Directory.GetParent(Directory.GetCurrentDirectory());
-        var projectDir = parent?.Parent?.Parent?.FullName;
+        DirectoryInfo? parent = Directory.GetParent(Directory.GetCurrentDirectory());
+        string? projectDir = parent?.Parent?.Parent?.FullName;
         Assert.True(projectDir != null);
-        var path = Path.Combine(projectDir, "boards.txt");;
+        string path = Path.Combine(projectDir, "boards.txt");;
         string[] lines = File.ReadAllLines(path);
         
-        foreach (var line in lines)
+        foreach (string line in lines)
         {
             // Arrange
-            int[,] board = Board.FromString(line);
-            int[,] original = (int[,])board.Clone();
+            int[,] board = Board.FromString(line, 9);
+            var original = (int[,])board.Clone();
         
             // Act
-            var (result, milliseconds) = Solver.TimedSolve(board);
+            (bool result, long milliseconds) = Solver.TimedSolve(board);
             
             // Assert
             string flatBoard = Board.FlatString(original);

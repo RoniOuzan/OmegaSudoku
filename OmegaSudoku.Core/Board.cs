@@ -2,20 +2,6 @@
 
 public static class Board
 {
-    /// <summary>
-    /// Size of the Sudoku board (number of rows and columns).
-    /// </summary>
-    public const int Size = 9;
-
-    /// <summary>
-    /// Total number of cells on the board.
-    /// </summary>
-    public const int CellsCount = Size * Size;
-
-    /// <summary>
-    /// Size of one sub-box (e.g., 3 for a 9x9 Sudoku).
-    /// </summary>
-    public static readonly int BoxSize = (int)Math.Sqrt(Size);
 
     /// <summary>
     /// Prints the board to the console in a formatted grid layout.
@@ -23,14 +9,16 @@ public static class Board
     /// <param name="board">The Sudoku board.</param>
     public static void Print(int[,] board)
     {
-        for (int r = 0; r < Size; r++)
+        int size = board.GetLength(0);
+        int boxSize = (int)Math.Sqrt(size);
+        for (int r = 0; r < size; r++)
         {
-            if (r > 0 && r % BoxSize == 0)
+            if (r > 0 && r % boxSize == 0)
                 Console.WriteLine("---------+---------+---------");
 
-            for (int c = 0; c < Size; c++)
+            for (int c = 0; c < size; c++)
             {
-                if (c > 0 && c % BoxSize == 0)
+                if (c > 0 && c % boxSize == 0)
                     Console.Write("|");
 
                 Console.Write($" {board[r, c]} ");
@@ -47,9 +35,10 @@ public static class Board
     /// <returns>A string representation of all 81 cells.</returns>
     public static string FlatString(int[,] board)
     {
-        string text = string.Empty;
-        for (int i = 0; i < Size; i++) 
-            for (int j = 0; j < Size; j++)
+        int size = board.GetLength(0);
+        var text = string.Empty;
+        for (int i = 0; i < size; i++) 
+            for (int j = 0; j < size; j++)
                 text += board[i, j];
 
         return text;
@@ -60,19 +49,21 @@ public static class Board
     /// Whitespace is ignored.
     /// </summary>
     /// <param name="input">String containing the board values.</param>
+    /// <param name="size">Size of the sudoku board</param>
     /// <returns>A 9x9 Sudoku board.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown if the input does not contain exactly 81 digits or invalid character.
     /// </exception>
-    public static int[,] FromString(string input)
+    public static int[,] FromString(string input, int size)
     {
+        int cellsCount = size * size;
         input = string.Concat(input.Where(c => !char.IsWhiteSpace(c)));
 
-        if (input.Length != CellsCount)
-            throw new ArgumentException($"Your input has {input.Length} digits, must contain exactly {CellsCount} digits.");
+        if (input.Length != cellsCount)
+            throw new ArgumentException($"Your input has {input.Length} digits, must contain exactly {cellsCount} digits.");
 
-        var board = new int[Size, Size];
-        for (int i = 0; i < CellsCount; i++)
+        var board = new int[size, size];
+        for (int i = 0; i < cellsCount; i++)
         {
             char c = input[i];
             if (!char.IsDigit(c))
@@ -84,7 +75,7 @@ public static class Board
                     $"{pointerLine}");
             }
 
-            board[i / Size, i % Size] = c - '0';
+            board[i / size, i % size] = c - '0';
         }
 
         return board;
@@ -99,13 +90,16 @@ public static class Board
     /// </returns>
     public static bool IsValidSudoku(int[,] board)
     {
+        int size = board.GetLength(0);
+        int boxSize = (int)Math.Sqrt(size);
+        
         // Check rows and columns
-        for (int i = 0; i < Size; i++)
+        for (int i = 0; i < size; i++)
         {
-            var rowCheck = new bool[Size];
-            var colCheck = new bool[Size];
+            var rowCheck = new bool[size];
+            var colCheck = new bool[size];
 
-            for (int j = 0; j < Size; j++)
+            for (int j = 0; j < size; j++)
             {
                 int row = board[i, j];
                 int col = board[j, i];
@@ -122,15 +116,15 @@ public static class Board
         }
 
         // Check boxes
-        for (int boxRow = 0; boxRow < BoxSize; boxRow++)
+        for (int boxRow = 0; boxRow < boxSize; boxRow++)
         {
-            for (int boxCol = 0; boxCol < BoxSize; boxCol++)
+            for (int boxCol = 0; boxCol < boxSize; boxCol++)
             {
-                var boxCheck = new bool[Size];
+                var boxCheck = new bool[size];
 
-                for (int r = boxRow * BoxSize; r < boxRow * BoxSize + BoxSize; r++)
+                for (int r = boxRow * boxSize; r < boxRow * boxSize + boxSize; r++)
                 {
-                    for (int c = boxCol * BoxSize; c < boxCol * BoxSize + BoxSize; c++)
+                    for (int c = boxCol * boxSize; c < boxCol * boxSize + boxSize; c++)
                     {
                         int cell = board[r, c];
 
@@ -145,8 +139,7 @@ public static class Board
 
         return true;
     }
-    
-    
+
 
     /// <summary>
     /// Calculates the box index for a given row and column.
@@ -154,9 +147,10 @@ public static class Board
     /// </summary>
     /// <param name="row">The row index of the cell.</param>
     /// <param name="col">The column index of the cell.</param>
+    /// <param name="boxSize">The size of a single box in the sudoku board</param>
     /// <returns>The index of the box that contains the cell. Boxes are indexed left-to-right, top-to-bottom, starting at 0.</returns>
-    public static int GetBoxIndex(int row, int col)
+    public static int GetBoxIndex(int row, int col, int boxSize)
     {
-        return (row / Board.BoxSize) * Board.BoxSize + (col / Board.BoxSize);
+        return (row / boxSize) * boxSize + (col / boxSize);
     }
 }

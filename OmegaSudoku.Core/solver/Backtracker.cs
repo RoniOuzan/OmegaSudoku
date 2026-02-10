@@ -71,7 +71,7 @@ public static class Backtracker
         state.Board[row, col] = num;
         state.RowUsed[row] |= bit;
         state.ColUsed[col] |= bit;
-        state.BoxUsed[Solver.BoxLookup[row, col]] |= bit;
+        state.BoxUsed[state.BoxLookup[row, col]] |= bit;
 
         // Save and clear this cell's possibilities
         state.Changes.Push(new BoardChange(row, col, state.Possibilities[row, col], true));
@@ -99,7 +99,7 @@ public static class Backtracker
                     int oldBit = 1 << (cell - 1);
                     state.RowUsed[oldR] &= ~oldBit;
                     state.ColUsed[oldC] &= ~oldBit;
-                    state.BoxUsed[Solver.BoxLookup[oldR, oldC]] &= ~oldBit;
+                    state.BoxUsed[state.BoxLookup[oldR, oldC]] &= ~oldBit;
                 }
                 state.Board[oldR, oldC] = 0;
             }
@@ -142,12 +142,12 @@ public static class Backtracker
             if (cellPossibilities == 0) return (false, -1, -1);
             if (cellPossibilities == 1) return (true, r, c);
 
-            if (CompareCell(state.Board, cellPossibilities, r, c, minPossibilities, bestNeighbors, bestConnectivity))
+            if (CompareCell(state, cellPossibilities, r, c, minPossibilities, bestNeighbors, bestConnectivity))
             {
                 bestR = r;
                 bestC = c;
                 minPossibilities = cellPossibilities;
-                bestNeighbors = CountEmptyCellsNeighbors(state.Board, r, c);
+                bestNeighbors = CountEmptyCellsNeighbors(state, r, c);
                 bestConnectivity = ConnectivityMap[r, c];
             }
         }
@@ -158,7 +158,7 @@ public static class Backtracker
     /// Determines whether the current cell is a better candidate
     /// than the current best according to MRV and tie-break rules.
     /// </summary>
-    private static bool CompareCell(int[,] board, int cellPossibilities, int r, int c, int minPossibilities, int bestNeighbors, int bestConnectivity)
+    private static bool CompareCell(SolverState state, int cellPossibilities, int r, int c, int minPossibilities, int bestNeighbors, int bestConnectivity)
     {
         // If it has fewer possibilities it's better
         if (cellPossibilities < minPossibilities)
@@ -167,7 +167,7 @@ public static class Backtracker
         // Tie-Breaker for empty neighbors and then connectivity
         if (cellPossibilities == minPossibilities)
         {
-            int neighbors = CountEmptyCellsNeighbors(board, r, c);
+            int neighbors = CountEmptyCellsNeighbors(state, r, c);
             int connectivity = ConnectivityMap[r, c];
 
             // If it has more neighbors, if they are the same -> compare connectivity
@@ -182,12 +182,13 @@ public static class Backtracker
     /// Used as a secondary heuristic for tie-breaking.
     /// </summary>
     /// <returns>The count of empty neighboring cells.</returns>
-    private static int CountEmptyCellsNeighbors(int[,] board, int r, int c)
+    private static int CountEmptyCellsNeighbors(SolverState state, int r, int c)
     {
+        var board = state.Board;
         int count = 0;
 
         // Count the empty cells in rows and columns
-        for (int i = 0; i < Board.Size; i++)
+        for (int i = 0; i < state.Size; i++)
         {
             // Row
             if (i != c && board[r, i] == 0) count++;
@@ -196,12 +197,13 @@ public static class Backtracker
         }
 
         // Count empty cells in box (avoid double counting row/col)
-        int boxR = (r / Board.BoxSize) * Board.BoxSize;
-        int boxC = (c / Board.BoxSize) * Board.BoxSize;
-        for (int i = boxR; i < boxR + Board.BoxSize; i++)
+        var boxSize = state.BoxSize;
+        int boxR = (r / boxSize) * boxSize;
+        int boxC = (c / boxSize) * boxSize;
+        for (int i = boxR; i < boxR + boxSize; i++)
         {
             if (i == r) continue;
-            for (int j = boxC; j < boxC + Board.BoxSize; j++)
+            for (int j = boxC; j < boxC + boxSize; j++)
             {
                 if (j == c) continue;
                 

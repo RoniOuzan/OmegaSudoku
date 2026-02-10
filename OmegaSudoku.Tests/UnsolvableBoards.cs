@@ -22,7 +22,7 @@ public class UnsolvableBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.False(result);
@@ -47,7 +47,7 @@ public class UnsolvableBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.False(result);

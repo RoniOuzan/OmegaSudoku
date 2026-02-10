@@ -1,7 +1,9 @@
 ﻿namespace OmegaSudoku.Core;
 
-public readonly struct SolverState(
+public class SolverState(
     int[,] board,
+    int size,
+    int[,] boxLookup,
     int[] rowUsed,
     int[] colUsed,
     int[] boxUsed,
@@ -10,6 +12,9 @@ public readonly struct SolverState(
     Stack<BoardChange> changes)
 {
     public readonly int[,] Board = board;
+    public readonly int Size = size;
+    public readonly int BoxSize = (int)Math.Sqrt(size);
+    public readonly int[,] BoxLookup = boxLookup;
     public readonly int[] RowUsed = rowUsed;
     public readonly int[] ColUsed = colUsed;
     public readonly int[] BoxUsed = boxUsed;

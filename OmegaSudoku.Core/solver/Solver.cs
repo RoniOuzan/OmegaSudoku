@@ -14,19 +14,6 @@ namespace OmegaSudoku.Core;
 /// </summary>
 public static class Solver
 {
-    /// Lookup table to convert a (row, column) pair to the corresponding box index on the Sudoku board.
-    public static readonly int[,] BoxLookup = new int[Board.Size, Board.Size];
-    /// Bitmask with all bits set for the size of the board (used for checking available numbers in cells).
-    private const int AllMask = (1 << Board.Size) - 1;
-
-    static Solver()
-    {
-        // Initialize Box Lookup
-        for (int r = 0; r < Board.Size; r++)
-            for (int c = 0; c < Board.Size; c++)
-                BoxLookup[r, c] = Board.GetBoxIndex(r, c);
-    }
-    
     /// <summary>
     /// Attempts to solve the given Sudoku board efficiently using bitmask, backtracking, MRV, propagation etc.
     /// Updates the given board with the solved board and returns whether it was solved along with the time taken.
@@ -39,7 +26,7 @@ public static class Solver
     /// </returns>
     public static (bool solved, long ms) TimedSolve(int[,] board)
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        var stopwatch = Stopwatch.StartNew();
         bool solved = Solve(board);
         stopwatch.Stop();
 
@@ -67,14 +54,22 @@ public static class Solver
     /// </summary>
     private static SolverState InitializeState(int[,] board)
     {
-        var rowUsed = new int[Board.Size];
-        var colUsed = new int[Board.Size];
-        var boxUsed = new int[Board.Size];
+        int size = board.GetLength(0);
+        int boxSize = (int)Math.Sqrt(size);
+        
+        var boxLookup = new int[size, size];
+        for (int r = 0; r < size; r++)
+            for (int c = 0; c < size; c++)
+                boxLookup[r, c] = Board.GetBoxIndex(r, c, boxSize);
+        
+        var rowUsed = new int[size];
+        var colUsed = new int[size];
+        var boxUsed = new int[size];
 
         // Initialize the bitmasks for row, column, and box usage
-        for (int i = 0; i < Board.Size; i++)
+        for (int i = 0; i < size; i++)
         {
-            for (int j = 0; j < Board.Size; j++)
+            for (int j = 0; j < size; j++)
             {
                 int cell = board[i, j];
                 if (cell == 0) continue;
@@ -82,22 +77,23 @@ public static class Solver
                 int bit = 1 << (cell - 1);
                 rowUsed[i] |= bit;
                 colUsed[j] |= bit;
-                boxUsed[BoxLookup[i, j]] |= bit;
+                boxUsed[boxLookup[i, j]] |= bit;
             }
         }
 
         // Check every possibility and store the empty cells
-        int[,] possibilities = new int[Board.Size, Board.Size];
+        var possibilities = new int[size, size];
         List<Cell> emptyCells = [];
-        for (int r = 0; r < Board.Size; r++)
+        int allMask = (1 << size) - 1;
+        for (int r = 0; r < size; r++)
         {
-            for (int c = 0; c < Board.Size; c++)
+            for (int c = 0; c < size; c++)
             {
                 int cell = board[r, c];
                 if (cell != 0) continue;
 
-                int used = rowUsed[r] | colUsed[c] | boxUsed[BoxLookup[r, c]];
-                possibilities[r, c] = AllMask & ~used;
+                int used = rowUsed[r] | colUsed[c] | boxUsed[boxLookup[r, c]];
+                possibilities[r, c] = allMask & ~used;
                 
                 emptyCells.Add(new Cell(r, c));
             }
@@ -105,6 +101,8 @@ public static class Solver
         
         return new SolverState(
             board,
+            size,
+            boxLookup,
             rowUsed,
             colUsed,
             boxUsed,

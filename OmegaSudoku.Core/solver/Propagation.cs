@@ -31,13 +31,13 @@ public static class Propagation
         while (queue.Count > 0)
         {
             Cell cell = queue.Dequeue();
-            var currentR = cell.Row;
-            var currentC = cell.Col;
+            int currentR = cell.Row;
+            int currentC = cell.Col;
             
             int number = state.Board[currentR, currentC];
             int bit = 1 << (number - 1);
 
-            for (int i = 0; i < Board.Size; i++)
+            for (int i = 0; i < state.Size; i++)
             {
                 // Row
                 if (i != currentC && 
@@ -51,12 +51,12 @@ public static class Propagation
             }
 
             // Box
-            int boxR = (currentR / Board.BoxSize) * Board.BoxSize;
-            int boxC = (currentC / Board.BoxSize) * Board.BoxSize;
-            for (int i = boxR; i < boxR + Board.BoxSize; i++)
+            int boxR = (currentR / state.BoxSize) * state.BoxSize;
+            int boxC = (currentC / state.BoxSize) * state.BoxSize;
+            for (int i = boxR; i < boxR + state.BoxSize; i++)
             {
                 if (i == currentR) continue;
-                for (int j = boxC; j < boxC + Board.BoxSize; j++)
+                for (int j = boxC; j < boxC + state.BoxSize; j++)
                 {
                     if (j == currentC) continue;
                     if (!ProcessNeighbor(i, j, bit, state, queue)) 
@@ -113,10 +113,11 @@ public static class Propagation
         {
             int nextNum = BitOperations.TrailingZeroCount(possibilities[r, c]) + 1;
             int nextBit = 1 << (nextNum - 1);
+            int boxIndex = state.BoxLookup[r, c];
             
             // Validate assignment against constraints
             if ((rowUsed[r] & nextBit) != 0 || (colUsed[c] & nextBit) != 0 ||
-                (boxUsed[Solver.BoxLookup[r, c]] & nextBit) != 0)
+                (boxUsed[boxIndex] & nextBit) != 0)
                 return false;
 
             // Mark this change as a committed placement
@@ -126,7 +127,7 @@ public static class Propagation
             board[r, c] = nextNum;
             rowUsed[r] |= nextBit;
             colUsed[c] |= nextBit;
-            boxUsed[Solver.BoxLookup[r, c]] |= nextBit;
+            boxUsed[boxIndex] |= nextBit;
                 
             possibilities[r, c] = 0;
             queue.Enqueue(new Cell(r, c));

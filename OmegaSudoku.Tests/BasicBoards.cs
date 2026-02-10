@@ -20,10 +20,10 @@ public class BasicBoards
             { 4, 7, 2, 3, 1, 9, 5, 6, 8 },
             { 8, 6, 3, 7, 4, 5, 2, 1, 9 }
         };
-        int[,] original = (int[,])board.Clone();
+        var original = (int[,])board.Clone();
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);
@@ -50,7 +50,7 @@ public class BasicBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);
@@ -62,10 +62,10 @@ public class BasicBoards
     public void EmptyBoard()
     {
         // Arrange
-        int[,] board = new int[9, 9];
+        var board = new int[9, 9];
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);
@@ -91,7 +91,7 @@ public class BasicBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);

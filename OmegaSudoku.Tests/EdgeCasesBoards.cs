@@ -22,7 +22,7 @@ public class EdgeCasesBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);
@@ -48,7 +48,7 @@ public class EdgeCasesBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);
@@ -74,7 +74,7 @@ public class EdgeCasesBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);
@@ -100,7 +100,7 @@ public class EdgeCasesBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool result, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
         Assert.True(result);
