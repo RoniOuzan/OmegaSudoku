@@ -25,18 +25,20 @@ public static class Propagation
         int[] colUsed, 
         int[] boxUsed, 
         int[,] possibilities, 
-        Stack<(int r, int c, int oldMask, bool bitSet)> changes,
+        Stack<BoardChange> changes,
         int row, 
         int col
     ) {
-        Queue<(int r, int c)> queue = new Queue<(int r, int c)>();
-        queue.Enqueue((row, col));
+        Queue<Cell> queue = new Queue<Cell>();
+        queue.Enqueue(new Cell(row, col));
 
         while (queue.Count > 0)
         {
-            var (currentR, currentC) = queue.Dequeue();
-            int cell = board[currentR, currentC];
-            int bit = 1 << (cell - 1);
+            Cell cell = queue.Dequeue();
+            int currentR = cell.Row;
+            int currentC = cell.Col;
+            int number = board[currentR, currentC];
+            int bit = 1 << (number - 1);
 
             for (int i = 0; i < Board.Size; i++)
             {
@@ -96,8 +98,8 @@ public static class Propagation
         int[] rowUsed, 
         int[] colUsed, 
         int[] boxUsed, 
-        Stack<(int r, int c, int oldMask, bool bitSet)> changes, 
-        Queue<(int r, int c)> queue
+        Stack<BoardChange> changes, 
+        Queue<Cell> queue
     ) {
         // Ignore already filled cells
         if (board[r, c] != 0) return true;
@@ -106,7 +108,7 @@ public static class Propagation
         if ((possibilities[r, c] & bit) == 0) return true;
         
         // Save previous state before modifying
-        changes.Push((r, c, possibilities[r, c], false));
+        changes.Push(new BoardChange(r, c, possibilities[r, c], false));
         possibilities[r, c] &= ~bit;
         
         int count = BitOperations.PopCount((uint)possibilities[r, c]);
@@ -126,7 +128,7 @@ public static class Propagation
 
             // Mark this change as a committed placement
             var last = changes.Pop();
-            changes.Push((last.r, last.c, last.oldMask, true));
+            changes.Push(new BoardChange(last.Row, last.Col, last.OldMask, true));
 
             board[r, c] = nextNum;
             rowUsed[r] |= nextBit;
@@ -134,7 +136,7 @@ public static class Propagation
             boxUsed[Solver.BoxLookup[r, c]] |= nextBit;
                 
             possibilities[r, c] = 0;
-            queue.Enqueue((r, c));
+            queue.Enqueue(new Cell(r, c));
         }
         
         return true;

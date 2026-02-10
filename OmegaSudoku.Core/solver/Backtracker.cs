@@ -36,8 +36,8 @@ public static class Backtracker
         int[] colUsed, 
         int[] boxUsed,
         int[,] possibilities,
-        List<(int r, int c)> emptyCells,
-        Stack<(int r, int c, int oldMask, bool bitSet)> changes
+        List<Cell> emptyCells,
+        Stack<BoardChange> changes
     ) {
         var (possible, r, c) = FindBestEmptyCell(board, possibilities, emptyCells);
         if (!possible) return false; // dead end because cell has no possibilities
@@ -88,7 +88,7 @@ public static class Backtracker
         int[] colUsed,
         int[] boxUsed,
         int[,] possibilities,
-        Stack<(int r, int c, int oldMask, bool bitSet)> changes,
+        Stack<BoardChange> changes,
         int row, int col, int num, int bit)
     {
         // Place the number on the cell
@@ -98,7 +98,7 @@ public static class Backtracker
         boxUsed[Solver.BoxLookup[row, col]] |= bit;
 
         // Save and clear this cell's possibilities
-        changes.Push((row, col, possibilities[row, col], true));
+        changes.Push(new BoardChange(row, col, possibilities[row, col], true));
         possibilities[row, col] = 0;
     }
 
@@ -119,15 +119,17 @@ public static class Backtracker
         int[] boxUsed,
         int[,] possibilities,
         int checkpoint,
-        Stack<(int r, int c, int oldMask, bool bitSet)> changes
+        Stack<BoardChange> changes
     )
     {
         while (changes.Count > checkpoint)
         {
-            var (oldR, oldC, oldMask, bitSet) = changes.Pop();
+            var change = changes.Pop();
+            int oldR = change.Row;
+            int oldC = change.Col;
             
             // Restore the bit
-            if (bitSet)
+            if (change.BitSet)
             {
                 int cell = board[oldR, oldC];
                 if (cell != 0)
@@ -140,7 +142,7 @@ public static class Backtracker
                 board[oldR, oldC] = 0;
             }
             
-            possibilities[oldR, oldC] = oldMask;
+            possibilities[oldR, oldC] = change.OldMask;
         }
     }
     
@@ -159,7 +161,7 @@ public static class Backtracker
     /// <item><c>col</c>: Column index of the selected cell.</item>
     /// </list>
     /// </returns>
-    private static (bool possible, int row, int col) FindBestEmptyCell(int[,] board, int[,] possibilities, List<(int r, int c)> emptyCells)
+    private static (bool possible, int row, int col) FindBestEmptyCell(int[,] board, int[,] possibilities, List<Cell> emptyCells)
     {
         int bestR = -1;
         int bestC = -1;
@@ -168,8 +170,10 @@ public static class Backtracker
         int bestConnectivity = -1;
         int bestNeighbors = -1;
         
-        foreach (var (r, c) in emptyCells)
+        foreach (Cell cell in emptyCells)
         {
+            int r = cell.Row;
+            int c = cell.Col;
             if (board[r, c] != 0) continue;
             
             // Gets the amount of possibilities

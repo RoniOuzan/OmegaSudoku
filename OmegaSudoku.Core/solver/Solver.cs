@@ -60,7 +60,7 @@ public static class Solver
 
         // Check every possibility and store the empty cells
         int[,] possibilities = new int[Board.Size, Board.Size];
-        List<(int r, int c)> emptyCells = [];
+        List<Cell> emptyCells = [];
         for (int r = 0; r < Board.Size; r++)
         {
             for (int c = 0; c < Board.Size; c++)
@@ -71,11 +71,11 @@ public static class Solver
                 int used = rowUsed[r] | colUsed[c] | boxUsed[BoxLookup[r, c]];
                 possibilities[r, c] = AllMask & ~used;
                 
-                emptyCells.Add((r, c));
+                emptyCells.Add(new Cell(r, c));
             }
         }
 
-        return Backtracker.SolveRecursive(board, rowUsed, colUsed, boxUsed, possibilities, emptyCells, new Stack<(int r, int c, int oldMask, bool bitSet)>(200));
+        return Backtracker.SolveRecursive(board, rowUsed, colUsed, boxUsed, possibilities, emptyCells, new Stack<BoardChange>(200));
     }
 
     /// <summary>
