@@ -91,7 +91,7 @@ public static class Propagation
         var rowUsed = state.RowUsed;
         var colUsed = state.ColUsed;
         var boxUsed = state.BoxUsed;
-        var possibilities = state.Possibilities;
+        var possibilities = state.AvailableNumbers;
         var changes = state.Changes;
         
         // Ignore already filled cells

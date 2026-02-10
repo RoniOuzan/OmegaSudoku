@@ -37,7 +37,7 @@ public static class Backtracker
         if (!possible) return false; // dead end because cell has no possibilities
         if (r == -1) return true;    // No empty cells left, so the board is solved
         
-        int options = state.Possibilities[r, c];
+        int options = state.AvailableNumbers[r, c];
 
         while (options != 0)
         {
@@ -74,8 +74,8 @@ public static class Backtracker
         state.BoxUsed[state.BoxLookup[row, col]] |= bit;
 
         // Save and clear this cell's possibilities
-        state.Changes.Push(new BoardChange(row, col, state.Possibilities[row, col], true));
-        state.Possibilities[row, col] = 0;
+        state.Changes.Push(new BoardChange(row, col, state.AvailableNumbers[row, col], true));
+        state.AvailableNumbers[row, col] = 0;
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ public static class Backtracker
                 state.Board[oldR, oldC] = 0;
             }
             
-            state.Possibilities[oldR, oldC] = change.OldMask;
+            state.AvailableNumbers[oldR, oldC] = change.OldMask;
         }
     }
     
@@ -138,7 +138,7 @@ public static class Backtracker
             if (state.Board[r, c] != 0) continue;
             
             // Gets the amount of possibilities
-            int cellPossibilities = BitOperations.PopCount((uint)state.Possibilities[r, c]);
+            int cellPossibilities = BitOperations.PopCount((uint)state.AvailableNumbers[r, c]);
             if (cellPossibilities == 0) return (false, -1, -1);
             if (cellPossibilities == 1) return (true, r, c);
 
