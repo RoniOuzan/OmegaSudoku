@@ -33,9 +33,9 @@ public static class Backtracker
     /// </summary>
     /// <returns><c>true</c> if the board was successfully solved; otherwise, <c>false</c>.</returns>
     public static bool SolveRecursive(SolverState state) {
-        var (possible, r, c) = FindBestEmptyCell(state);
+        (bool possible, int r, int c) = FindBestEmptyCell(state);
         if (!possible) return false; // dead end because cell has no possibilities
-        if (r == -1) return true;    // No empty cells left, so the board is solved
+        if (r == -1) return Board.IsValidSudoku(state.Board); // No empty cells left, so the board is filled
         
         int options = state.AvailableNumbers[r, c];
 

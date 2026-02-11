@@ -24,7 +24,7 @@ public static class Solver
     /// - <c>solved</c>: whether a valid solution was found.
     /// - <c>ms</c>: elapsed time in milliseconds.
     /// </returns>
-    public static (bool solved, long ms) TimedSolve(int[,] board)
+    public static (bool finished, long ms) TimedSolve(int[,] board)
     {
         var stopwatch = Stopwatch.StartNew();
         bool solved = Solve(board);
@@ -40,7 +40,10 @@ public static class Solver
     /// <returns><c>true</c> if the board was successfully solved; otherwise, <c>false</c>.</returns>
     public static bool Solve(int[,] board)
     {
-        SolverState state = InitializeState(board);
+        SolverState? state = InitializeState(board);
+        if (state == null) // Board is unsolvable
+            return false;
+        
         return Backtracker.SolveRecursive(state);
     }
 
@@ -52,7 +55,7 @@ public static class Solver
     /// - Computes initial possibility masks for all empty cells.
     /// - Collects coordinates of empty cells.
     /// </summary>
-    private static SolverState InitializeState(int[,] board)
+    private static SolverState? InitializeState(int[,] board)
     {
         int size = board.GetLength(0);
         int boxSize = (int)Math.Sqrt(size);
@@ -75,9 +78,19 @@ public static class Solver
                 if (cell == 0) continue;
                 
                 int bit = 1 << (cell - 1);
+                int box = boxLookup[i, j];
+
+                // If the board is invalid
+                if ((rowUsed[i] & bit) != 0 ||
+                    (colUsed[j] & bit) != 0 ||
+                    (boxUsed[box] & bit) != 0)
+                {
+                    return null;
+                }
+
                 rowUsed[i] |= bit;
                 colUsed[j] |= bit;
-                boxUsed[boxLookup[i, j]] |= bit;
+                boxUsed[box] |= bit;
             }
         }
 

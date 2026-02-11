@@ -35,9 +35,7 @@ class Program
         if (solved)
         {
             Board.Print(board);
-            Console.WriteLine(Board.IsValidSudoku(board)
-                ? $"Solved in {milliseconds} ms!"
-                : $"Didn't solved in {milliseconds} ms!");
+            Console.WriteLine($"Solved in {milliseconds} ms!");
         }
         else
         {
