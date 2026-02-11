@@ -2,7 +2,6 @@
 
 public static class Board
 {
-
     /// <summary>
     /// Prints the board to the console in a formatted grid layout.
     /// </summary>
@@ -139,7 +138,6 @@ public static class Board
 
         return true;
     }
-
 
     /// <summary>
     /// Calculates the box index for a given row and column.

@@ -2,7 +2,7 @@
 
 namespace OmegaSudoku.Tests;
 
-public class FileBoards
+public class FileBoardsTests
 {
     [Fact]
     public void BoardsFromFile()
@@ -20,11 +20,11 @@ public class FileBoards
             var original = (int[,])board.Clone();
         
             // Act
-            (bool result, long milliseconds) = Solver.TimedSolve(board);
+            (bool solved, long milliseconds) = Solver.TimedSolve(board);
             
             // Assert
             string flatBoard = Board.FlatString(original);
-            Assert.True(result, $"Not solved: {flatBoard}");
+            Assert.True(solved, $"Not solved: {flatBoard}");
             Assert.True(Board.IsValidSudoku(board), $"Finished but not valid: {flatBoard}");
             Assert.True(milliseconds < 1000, $"Took {milliseconds}ms for: {flatBoard}");
         }

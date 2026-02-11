@@ -2,7 +2,7 @@
 
 namespace OmegaSudoku.Tests;
 
-public class BasicBoards
+public class BasicBoardsTests
 {
     [Fact]
     public void AlreadySolvedBoard()
@@ -23,10 +23,10 @@ public class BasicBoards
         var original = (int[,])board.Clone();
 
         // Act
-        (bool result, long milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.Equal(original, board);
         Assert.True(milliseconds < 1000);
@@ -50,10 +50,10 @@ public class BasicBoards
         };
 
         // Act
-        (bool result, long milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.True(milliseconds < 1000);
     }
@@ -65,10 +65,10 @@ public class BasicBoards
         var board = new int[9, 9];
 
         // Act
-        (bool result, long milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.True(milliseconds < 1000);
     }
@@ -91,10 +91,10 @@ public class BasicBoards
         };
 
         // Act
-        (bool result, long milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.True(milliseconds < 1000);
     }

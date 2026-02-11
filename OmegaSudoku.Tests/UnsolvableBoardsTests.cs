@@ -2,7 +2,7 @@
 
 namespace OmegaSudoku.Tests;
 
-public class UnsolvableBoards
+public class UnsolvableBoardsTests
 {
     [Fact]
     public void DuplicateInRow()
@@ -22,10 +22,10 @@ public class UnsolvableBoards
         };
 
         // Act
-        (bool result, long milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.False(result);
+        Assert.False(solved);
         Assert.True(milliseconds < 1000);
     }
 
@@ -47,10 +47,35 @@ public class UnsolvableBoards
         };
 
         // Act
-        (bool result, long milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.False(result);
+        Assert.False(solved);
+        Assert.True(milliseconds < 1000);
+    }
+    
+    [Fact]
+    public void ImpossibleLastCell()
+    {
+        // Arrange
+        int[,] board =
+        {
+            { 1, 2, 3, 4, 5, 6, 7, 8, 9 },
+            { 4, 5, 6, 7, 8, 9, 1, 2, 3 },
+            { 7, 8, 9, 1, 2, 3, 4, 5, 6 },
+            { 2, 3, 4, 5, 6, 7, 8, 9, 1 },
+            { 5, 6, 7, 8, 9, 1, 2, 3, 4 },
+            { 8, 9, 1, 2, 3, 4, 5, 6, 7 },
+            { 3, 4, 5, 6, 7, 8, 9, 1, 2 },
+            { 6, 7, 8, 9, 1, 2, 3, 4, 5 },
+            { 9, 1, 2, 3, 4, 5, 6, 7, 0 }
+        };
+
+        // Act
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
+
+        // Assert
+        Assert.False(solved);
         Assert.True(milliseconds < 1000);
     }
 }
