@@ -61,7 +61,7 @@ This combination of **MRV heuristic**, **forward-checking**, and **efficient bit
 - **Core** – contains `Board.cs` and `Solver.cs` and more.
 - **App** – simple interface to run and solve Sudoku boards.
 - **Tests** – automated tests ensuring the Solver works correctly and efficiently, including reading boards from files.
-- 
+
 ## Example Usage
 ```csharp
 var (solved, ms) = Solver.TimedSolve(board);
