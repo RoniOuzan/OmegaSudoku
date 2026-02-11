@@ -1,9 +1,17 @@
 ﻿using OmegaSudoku.Core;
+using Xunit.Abstractions;
 
 namespace OmegaSudoku.Tests;
 
 public class BasicBoardsTests
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public BasicBoardsTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public void AlreadySolvedBoard()
     {
@@ -79,15 +87,15 @@ public class BasicBoardsTests
         // Arrange
         int[,] board =
         {
-            { 0, 0, 0, 0, 0, 6, 0, 0, 0 },
-            { 0, 5, 9, 0, 0, 0, 0, 0, 8 },
-            { 2, 0, 0, 0, 0, 8, 0, 0, 0 },
-            { 0, 4, 5, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 3, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 6, 0, 0, 3, 0, 5, 4 },
-            { 0, 0, 0, 3, 2, 5, 0, 0, 6 },
+            { 0, 8, 0, 5, 0, 0, 0, 0, 2 },
+            { 3, 0, 0, 6, 0, 0, 0, 4, 0 },
             { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+            { 4, 2, 0, 0, 8, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 6, 1, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 4, 1, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 3, 2, 0, 0 },
+            { 7, 0, 0, 0, 0, 0, 0, 0, 8 }
         };
 
         // Act
@@ -97,5 +105,7 @@ public class BasicBoardsTests
         Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.True(milliseconds < 1000);
+
+        _testOutputHelper.WriteLine(milliseconds.ToString());
     }
 }
