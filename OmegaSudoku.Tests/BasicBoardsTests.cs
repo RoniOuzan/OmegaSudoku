@@ -1,9 +1,17 @@
 ﻿using OmegaSudoku.Core;
+using Xunit.Abstractions;
 
 namespace OmegaSudoku.Tests;
 
-public class BasicBoards
+public class BasicBoardsTests
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public BasicBoardsTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public void AlreadySolvedBoard()
     {
@@ -20,13 +28,13 @@ public class BasicBoards
             { 4, 7, 2, 3, 1, 9, 5, 6, 8 },
             { 8, 6, 3, 7, 4, 5, 2, 1, 9 }
         };
-        int[,] original = (int[,])board.Clone();
+        var original = (int[,])board.Clone();
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.Equal(original, board);
         Assert.True(milliseconds < 1000);
@@ -50,10 +58,10 @@ public class BasicBoards
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.True(milliseconds < 1000);
     }
@@ -62,13 +70,13 @@ public class BasicBoards
     public void EmptyBoard()
     {
         // Arrange
-        int[,] board = new int[9, 9];
+        var board = new int[9, 9];
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.True(milliseconds < 1000);
     }
@@ -79,23 +87,25 @@ public class BasicBoards
         // Arrange
         int[,] board =
         {
-            { 0, 0, 0, 0, 0, 6, 0, 0, 0 },
-            { 0, 5, 9, 0, 0, 0, 0, 0, 8 },
-            { 2, 0, 0, 0, 0, 8, 0, 0, 0 },
-            { 0, 4, 5, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 3, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 6, 0, 0, 3, 0, 5, 4 },
-            { 0, 0, 0, 3, 2, 5, 0, 0, 6 },
+            { 0, 8, 0, 5, 0, 0, 0, 0, 2 },
+            { 3, 0, 0, 6, 0, 0, 0, 4, 0 },
             { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+            { 4, 2, 0, 0, 8, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 6, 1, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 4, 1, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 3, 2, 0, 0 },
+            { 7, 0, 0, 0, 0, 0, 0, 0, 8 }
         };
 
         // Act
-        var (result, milliseconds) = Solver.TimedSolve(board);
+        (bool solved, long milliseconds) = Solver.TimedSolve(board);
 
         // Assert
-        Assert.True(result);
+        Assert.True(solved);
         Assert.True(Board.IsValidSudoku(board));
         Assert.True(milliseconds < 1000);
+
+        _testOutputHelper.WriteLine(milliseconds.ToString());
     }
 }
