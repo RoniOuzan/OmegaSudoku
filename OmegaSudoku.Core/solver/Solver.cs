@@ -40,6 +40,9 @@ public static class Solver
     /// <returns><c>true</c> if the board was successfully solved; otherwise, <c>false</c>.</returns>
     public static bool Solve(int[,] board)
     {
+        if (!IsValidBoard(board))
+            return false;
+        
         SolverState? state = InitializeState(board);
         if (state == null) // Board is unsolvable
             return false;
@@ -48,55 +51,112 @@ public static class Solver
     }
 
     /// <summary>
-    /// Builds the internal <see cref="SolverState"/> required by the backtracking engine.
-    /// 
-    /// This method:
-    /// - Initializes row/column/box usage bitmasks.
-    /// - Computes initial possibility masks for all empty cells.
-    /// - Collects coordinates of empty cells.
+    /// Validates the structural shape of the board.
+    /// Ensures it is square and its size forms valid sub-boxes.
     /// </summary>
+    /// <returns><c>true</c> if the board shape is valid; otherwise, <c>false</c>.</returns>
+    private static bool IsValidBoard(int[,] board)
+    {
+        int size = board.GetLength(0);
+        if (size != board.GetLength(1))
+            return false;
+
+        int boxSize = (int)Math.Sqrt(size);
+        if (boxSize * boxSize != size)
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Builds the <see cref="SolverState"/> used by the backtracking engine.
+    /// Initializes masks, candidate values, and empty cell tracking.
+    /// Returns <c>null</c> if the board is invalid.
+    /// </summary>
+    /// <returns>The initialized solver state, or <c>null</c> if invalid.</returns>
     private static SolverState? InitializeState(int[,] board)
     {
         int size = board.GetLength(0);
-        int boxSize = (int)Math.Sqrt(size);
+        var boxSize = (int)Math.Sqrt(size);
+        int[,] boxLookup = CreateBoxLookup(size, boxSize);
+
+        if (!TryInitializeMasks(board, size, boxLookup, out Masks masks))
+            return null;
+
+        int[,] availableNumbers = CreateInitialPossibilities(board, size, boxLookup, masks);
+        List<Cell> emptyCells = CollectEmptyCells(board, size);
         
+        return new SolverState(
+            board,
+            size,
+            boxSize,
+            boxLookup,
+            masks.Row,
+            masks.Col,
+            masks.Box,
+            availableNumbers,
+            emptyCells,
+            new Stack<BoardChange>()
+        );
+    }
+
+    /// <summary>
+    /// Builds row, column, and box constraint masks from the board.
+    /// Validates value ranges and detects duplicate conflicts.
+    /// </summary>
+    /// <returns><c>true</c> if valid; otherwise, <c>false</c>.</returns>
+    private static bool TryInitializeMasks(int[,] board, int size, int[,] boxLookup, out Masks masks)
+    {
+        masks = new Masks(size);
+
+        for (int r = 0; r < size; r++)
+        {
+            for (int c = 0; c < size; c++)
+            {
+                int cell = board[r, c];
+                if (cell == 0) continue;
+                
+                if (cell < 1 || cell > size)
+                    return false;
+
+                int bit = 1 << (cell - 1);
+                int box = boxLookup[r, c];
+
+                if ((masks.Row[r] & bit) != 0 ||
+                    (masks.Col[c] & bit) != 0 ||
+                    (masks.Box[box] & bit) != 0)
+                    return false;
+
+                masks.Row[r] |= bit;
+                masks.Col[c] |= bit;
+                masks.Box[box] |= bit;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Creates a lookup table mapping each cell to its box index.
+    /// </summary>
+    /// <returns>A 2D array of box indices.</returns>
+    private static int[,] CreateBoxLookup(int size, int boxSize)
+    {
         var boxLookup = new int[size, size];
         for (int r = 0; r < size; r++)
             for (int c = 0; c < size; c++)
                 boxLookup[r, c] = Board.GetBoxIndex(r, c, boxSize);
         
-        var rowUsed = new int[size];
-        var colUsed = new int[size];
-        var boxUsed = new int[size];
+        return boxLookup;
+    }
 
-        // Initialize the bitmasks for row, column, and box usage
-        for (int i = 0; i < size; i++)
-        {
-            for (int j = 0; j < size; j++)
-            {
-                int cell = board[i, j];
-                if (cell == 0) continue;
-                
-                int bit = 1 << (cell - 1);
-                int box = boxLookup[i, j];
-
-                // If the board is invalid
-                if ((rowUsed[i] & bit) != 0 ||
-                    (colUsed[j] & bit) != 0 ||
-                    (boxUsed[box] & bit) != 0)
-                {
-                    return null;
-                }
-
-                rowUsed[i] |= bit;
-                colUsed[j] |= bit;
-                boxUsed[box] |= bit;
-            }
-        }
-
-        // Check every possibility and store the empty cells
-        var possibilities = new int[size, size];
-        List<Cell> emptyCells = [];
+    /// <summary>
+    /// Computes initial candidate masks for all empty cells.
+    /// </summary>
+    /// <returns>A 2D array of candidate bitmasks.</returns>
+    private static int[,] CreateInitialPossibilities(int[,] board, int size, int[,] boxLookup, Masks masks)
+    {
+        var availableNumbers = new int[size, size];
         int allMask = (1 << size) - 1;
         for (int r = 0; r < size; r++)
         {
@@ -105,23 +165,26 @@ public static class Solver
                 int cell = board[r, c];
                 if (cell != 0) continue;
 
-                int used = rowUsed[r] | colUsed[c] | boxUsed[boxLookup[r, c]];
-                possibilities[r, c] = allMask & ~used;
-                
-                emptyCells.Add(new Cell(r, c));
+                int used = masks.Row[r] | masks.Col[c] | masks.Box[boxLookup[r, c]];
+                availableNumbers[r, c] = allMask & ~used;
             }
         }
+
+        return availableNumbers;
+    }
+
+    /// <summary>
+    /// Collects coordinates of all empty cells in the board.
+    /// </summary>
+    /// <returns>A list of empty cell positions.</returns>
+    private static List<Cell> CollectEmptyCells(int[,] board, int size)
+    {
+        List<Cell> emptyCells = [];
+        for (int r = 0; r < size; r++)
+            for (int c = 0; c < size; c++)
+                if (board[r, c] == 0)
+                    emptyCells.Add(new Cell(r, c));
         
-        return new SolverState(
-            board,
-            size,
-            boxLookup,
-            rowUsed,
-            colUsed,
-            boxUsed,
-            possibilities,
-            emptyCells,
-            new Stack<BoardChange>()
-        );
+        return emptyCells;
     }
 }
